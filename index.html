@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Nomor Surat Bersama</title>
+  <style>
+    body { font-family: Arial; padding: 20px }
+    h2 { margin-top: 40px }
+    button { font-size: 18px; padding: 5px 12px }
+    table { border-collapse: collapse; margin-top: 10px }
+    td, th { border: 1px solid #ccc; padding: 6px 10px }
+  </style>
+</head>
+<body>
+
+<h1>Nomor Surat</h1>
+
+<label>Bulan (Romawi): <input id="bulan" value="II"></label>
+<label>Tahun: <input id="tahun" value="2026"></label>
+
+<h2>SKB</h2>
+<div id="skb-display">Loading...</div>
+<button onclick="addNumber('SKB')">+</button>
+<div id="skb-table"></div>
+
+<h2>KEUR</h2>
+<div id="keur-display">Loading...</div>
+<button onclick="addNumber('KEUR')">+</button>
+<div id="keur-table"></div>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+  getFirestore, doc, runTransaction,
+  collection, query, where, orderBy, limit, getDocs,
+  serverTimestamp, addDoc
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "API_KEY",
+  authDomain: "PROJECT.firebaseapp.com",
+  projectId: "PROJECT_ID"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+function pad(num) {
+  return String(num).padStart(5, '0');
+}
+
+async function loadDisplay(type) {
+  const q = query(
+    collection(db, "logs"),
+    where("type", "==", type),
+    orderBy("number", "desc"),
+    limit(1)
+  );
+  const snap = await getDocs(q);
+  const last = snap.docs[0]?.data()?.number || 0;
+
+  const bulan = document.getElementById("bulan").value;
+  const tahun = document.getElementById("tahun").value;
+
+  document.getElementById(type.toLowerCase() + "-display").innerText =
+    `400.7/${pad(last)}/${type}/PKM.KDG/${bulan}/${tahun}`;
+}
+
+async function loadTable(type) {
+  const q = query(
+    collection(db, "logs"),
+    where("type", "==", type),
+    orderBy("timestamp", "desc"),
+    limit(5)
+  );
+  const snap = await getDocs(q);
+
+  let html = "<table><tr><th>No</th><th>Nomor</th><th>Jam</th></tr>";
+  snap.docs.forEach((d, i) => {
+    const data = d.data();
+    html += `<tr>
+      <td>${i + 1}</td>
+      <td>${pad(data.number)}</td>
+      <td>${new Date(data.timestamp.seconds * 1000).toLocaleTimeString()}</td>
+    </tr>`;
+  });
+  html += "</table>";
+
+  document.getElementById(type.toLowerCase() + "-table").innerHTML = html;
+}
+
+async function addNumber(type) {
+  const counterRef = doc(db, "counters", type);
+
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(counterRef);
+    const last = snap.data().lastNumber;
+    const next = last + 1;
+    tx.update(counterRef, { lastNumber: next });
+
+    await addDoc(collection(db, "logs"), {
+      type,
+      number: next,
+      month: document.getElementById("bulan").value,
+      year: document.getElementById("tahun").value,
+      timestamp: serverTimestamp()
+    });
+  });
+
+  load(type);
+}
+
+async function load(type) {
+  await loadDisplay(type);
+  await loadTable(type);
+}
+
+load("SKB");
+load("KEUR");
+
+</script>
+</body>
+</html>
