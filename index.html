@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Nomor Surat Pasien V1.4</title>
+  <title>Nomor Surat Pasien V1.5</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
@@ -261,124 +261,211 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  // Debug function
-  window.debugFirestore = async () => {
-    try {
-      console.log("=== DEBUG FIREBASE CONNECTION ===");
-      
-      // Test 1: Coba akses collection tanpa filter
-      const testQuery = query(collection(db, "history"), limit(1));
-      const unsubscribe = onSnapshot(testQuery, 
-        (snapshot) => {
-          console.log("✅ Connection successful");
-          console.log("Sample data:", snapshot.docs.map(d => d.data()));
-          unsubscribe();
-        },
-        (error) => {
-          console.error("❌ Firestore error:", error);
-          console.error("Error code:", error.code);
-          console.error("Error message:", error.message);
-          
-          if (error.code === 'failed-precondition') {
-            console.log("⚠️  You need to create an index in Firebase Console");
-            console.log("Go to: Firebase Console > Firestore > Indexes");
-          }
-        }
-      );
-      
-    } catch (error) {
-      console.error("❌ Setup error:", error);
-    }
-  };
-
-  // Load saat halaman dibuka
-  document.addEventListener('DOMContentLoaded', () => {
-    console.log("Running debug...");
-    window.debugFirestore();
+  // Fungsi untuk inspect data structure
+  window.inspectData = () => {
+    console.log("=== INSPECTING FIREBASE DATA STRUCTURE ===");
     
-    // Coba load data dengan cara sederhana
-    loadDataSimple('SKB');
-    loadDataSimple('KEUR');
-  });
-
-  // Fungsi sederhana tanpa filter where
-  window.loadDataSimple = async (type) => {
-    const tbody = document.querySelector(`#table${type} tbody`);
+    const q = query(collection(db, "history"), limit(5));
     
-    try {
-      console.log(`Loading ${type} data...`);
-      
-      // Query sederhana tanpa where()
-      const q = query(
-        collection(db, "history"), 
-        orderBy("time", "desc"), 
-        limit(15)
-      );
-      
-      const unsubscribe = onSnapshot(q, 
-        (snapshot) => {
-          console.log(`${type} snapshot received:`, snapshot.docs.length, "docs");
+    const unsubscribe = onSnapshot(q, 
+      (snapshot) => {
+        console.log("📊 Data Structure Analysis:");
+        
+        snapshot.docs.forEach((doc, index) => {
+          const data = doc.data();
+          console.log(`\n📄 Document ${index + 1}:`);
+          console.log("  ID:", doc.id);
           
-          if (snapshot.empty) {
-            tbody.innerHTML = '<tr><td colspan="3" class="empty-state">Belum ada data</td></tr>';
-            return;
-          }
-          
-          // Filter di client side
-          const filteredDocs = snapshot.docs.filter(doc => {
-            const data = doc.data();
-            return data.type === type;
+          // Log semua field
+          Object.keys(data).forEach(key => {
+            const value = data[key];
+            console.log(`  ${key}:`, value, `(type: ${typeof value})`);
+            
+            // Cek khusus untuk time field
+            if (key === 'time') {
+              console.log(`    ⏰ Time details:`, 
+                value?.constructor?.name,
+                value?.toDate ? "Has toDate() method" : "No toDate() method"
+              );
+            }
           });
           
-          updateTableSimple(type, filteredDocs);
-        },
-        (error) => {
-          console.error(`Error loading ${type}:`, error);
-          tbody.innerHTML = `<tr><td colspan="3" style="color:#dc2626;text-align:center;">
-            Error: ${error.code}<br>
-            ${error.message}
-          </td></tr>`;
+          // Cek field type
+          if (!data.type) {
+            console.log("  ⚠️  MISSING 'type' FIELD!");
+          }
+        });
+        
+        unsubscribe();
+        
+        // Analisis
+        console.log("\n🔍 ANALYSIS:");
+        const firstDoc = snapshot.docs[0]?.data();
+        if (firstDoc) {
+          console.log("1. Field yang ada:", Object.keys(firstDoc));
+          console.log("2. Contoh nomor surat:", firstDoc.nomor);
+          console.log("3. Type field:", firstDoc.type || "NOT FOUND");
+          console.log("4. Time field type:", 
+            firstDoc.time?.constructor?.name || "NOT FOUND");
         }
-      );
-      
-    } catch (error) {
-      console.error(`Setup error for ${type}:`, error);
-      tbody.innerHTML = '<tr><td colspan="3" class="empty-state">Error setup</td></tr>';
-    }
+      },
+      (error) => {
+        console.error("❌ Inspection error:", error);
+      }
+    );
   };
 
-  window.updateTableSimple = (type, docs) => {
+  // Load data dengan error handling yang lebih baik
+  window.loadTableData = (type) => {
     const tbody = document.querySelector(`#table${type} tbody`);
     
-    if (!docs || docs.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="3" class="empty-state">Belum ada data ' + type + '</td></tr>';
-      return;
-    }
+    // Query SEMUA data dulu (tanpa filter type di query)
+    const q = query(
+      collection(db, "history"), 
+      orderBy("time", "desc"), 
+      limit(20)
+    );
+    
+    const unsubscribe = onSnapshot(q, 
+      (snapshot) => {
+        console.log(`📥 ${type}: Received ${snapshot.docs.length} total documents`);
+        
+        // Filter di client side
+        const filteredDocs = [];
+        
+        snapshot.docs.forEach(doc => {
+          const data = doc.data();
+          console.log(`  Checking doc: type="${data.type}", nomor="${data.nomor}"`);
+          
+          if (data.type === type) {
+            filteredDocs.push(doc);
+          }
+        });
+        
+        console.log(`  ↳ Found ${filteredDocs.length} ${type} documents`);
+        
+        if (filteredDocs.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="3" class="empty-state">
+                Belum ada data ${type}.<br>
+                <small>Tip: Buat nomor ${type} pertama dengan tombol "+"</small>
+              </td>
+            </tr>
+          `;
+        } else {
+          renderTable(type, filteredDocs);
+        }
+      },
+      (error) => {
+        console.error(`❌ ${type} listener error:`, error);
+        
+        // Fallback: coba tanpa orderBy jika error
+        if (error.code === 'failed-precondition') {
+          console.log(`⚠️  ${type}: Trying without orderBy...`);
+          loadWithoutOrderBy(type);
+        } else {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="3" style="color:#dc2626;text-align:center;padding:20px;">
+                Error loading ${type}: ${error.code}<br>
+                <button onclick="loadTableData('${type}')" 
+                        style="margin-top:10px;padding:5px 10px;background:#dc2626;color:white;border:none;border-radius:4px;">
+                  Coba Lagi
+                </button>
+              </td>
+            </tr>
+          `;
+        }
+      }
+    );
+    
+    // Simpan unsubscribe untuk cleanup nanti
+    window[`unsubscribe${type}`] = unsubscribe;
+  };
+
+  window.loadWithoutOrderBy = (type) => {
+    const tbody = document.querySelector(`#table${type} tbody`);
+    
+    const q = query(collection(db, "history"), limit(20));
+    
+    onSnapshot(q, 
+      (snapshot) => {
+        const filteredDocs = snapshot.docs.filter(doc => doc.data().type === type);
+        
+        // Sort manual di client side
+        filteredDocs.sort((a, b) => {
+          const timeA = a.data().time;
+          const timeB = b.data().time;
+          
+          // Handle jika time adalah timestamp
+          if (timeA && timeA.toDate && timeB && timeB.toDate) {
+            return timeB.toDate() - timeA.toDate();
+          }
+          
+          // Handle jika time adalah string atau number
+          if (timeA && timeB) {
+            return new Date(timeB) - new Date(timeA);
+          }
+          
+          return 0;
+        });
+        
+        renderTable(type, filteredDocs.slice(0, 10)); // Ambil 10 terbaru
+      },
+      (error) => {
+        console.error(`Even without orderBy error:`, error);
+        tbody.innerHTML = '<tr><td colspan="3" class="empty-state">Error loading data</td></tr>';
+      }
+    );
+  };
+
+  window.renderTable = (type, docs) => {
+    const tbody = document.querySelector(`#table${type} tbody`);
     
     let html = '';
     docs.forEach(doc => {
-      const x = doc.data();
-      let timeStr = 'Waktu tidak tersedia';
+      const data = doc.data();
       
+      // Format waktu
+      let timeDisplay = "Waktu tidak tersedia";
       try {
-        if (x.time && x.time.toDate) {
-          const time = x.time.toDate();
-          timeStr = time.toLocaleTimeString('id-ID', {
-            hour: '2-digit',
-            minute: '2-digit'
-          });
+        if (data.time) {
+          if (data.time.toDate) {
+            // Firestore timestamp
+            const date = data.time.toDate();
+            timeDisplay = date.toLocaleTimeString('id-ID', {
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+          } else if (typeof data.time === 'string' || typeof data.time === 'number') {
+            // String atau timestamp number
+            const date = new Date(data.time);
+            timeDisplay = date.toLocaleTimeString('id-ID', {
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+          }
         }
       } catch (e) {
-        console.warn("Time parsing error:", e);
+        console.warn("Time formatting error:", e);
       }
       
       html += `
         <tr>
-          <td class="copy" onclick="copyText('${x.nomor || ''}')">
-            ${x.nomor || 'No number'} 📋
+          <td class="copy" onclick="copyText('${data.nomor || ''}')" 
+              style="cursor:pointer;color:#2563eb;padding:12px 8px;">
+            <strong>${data.nomor || 'No number'}</strong>
+            <div style="font-size:12px;color:#6b7280;margin-top:2px;">
+              📋 Klik untuk menyalin
+            </div>
           </td>
-          <td>${x.ruang || '-'}</td>
-          <td>${timeStr}</td>
+          <td style="padding:12px 8px;">
+            <span style="background:#f3f4f6;padding:4px 8px;border-radius:4px;">
+              ${data.ruang || '-'}
+            </span>
+          </td>
+          <td style="padding:12px 8px;">${timeDisplay}</td>
         </tr>
       `;
     });
@@ -386,17 +473,45 @@
     tbody.innerHTML = html;
   };
 
+  // Initialize
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log("🚀 Initializing application...");
+    
+    // Jalankan inspect untuk debugging
+    window.inspectData();
+    
+    // Tunggu 1 detik, lalu load data
+    setTimeout(() => {
+      console.log("Loading table data...");
+      window.loadTableData('SKB');
+      window.loadTableData('KEUR');
+    }, 1000);
+    
+    // Auto bulan & tahun
+    const bulanRomawi = ["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII"];
+    const now = new Date();
+    document.getElementById("bulan").value = bulanRomawi[now.getMonth()];
+    document.getElementById("tahun").value = now.getFullYear();
+  });
+
   // Toast function
-  window.showToast = (text) => {
+  window.showToast = (text, type = 'info') => {
     const toast = document.getElementById("toast");
     toast.textContent = text;
+    toast.style.background = type === 'error' ? '#dc2626' : 
+                            type === 'success' ? '#059669' : '#111827';
     toast.classList.add("show");
     setTimeout(() => toast.classList.remove("show"), 3000);
   };
 
   window.copyText = (text) => {
-    navigator.clipboard.writeText(text);
-    showToast("Nomor disalin");
+    if (!text) {
+      showToast("Tidak ada teks untuk disalin", 'error');
+      return;
+    }
+    navigator.clipboard.writeText(text)
+      .then(() => showToast("Nomor surat disalin", 'success'))
+      .catch(() => showToast("Gagal menyalin", 'error'));
   };
 </script>
 
