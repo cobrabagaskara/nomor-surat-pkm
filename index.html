@@ -1,292 +1,187 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
   <title>Nomor Surat Bersama</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- Style sederhana, fokus mobile -->
   <style>
     body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #f4f6f8;
+      font-family: system-ui, sans-serif;
+      background: #f3f4f6;
       margin: 0;
       padding: 16px;
-      color: #111;
     }
-
     h1 {
       text-align: center;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
-
-    .top-controls {
-      background: #fff;
+    .card {
+      background: white;
       border-radius: 12px;
       padding: 16px;
       margin-bottom: 20px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      box-shadow: 0 8px 20px rgba(0,0,0,.06);
     }
-
-    .top-controls label {
-      font-weight: 600;
-      display: block;
-      margin-bottom: 6px;
-    }
-
     select, input {
       width: 100%;
-      padding: 12px;
-      margin-bottom: 12px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
+      padding: 10px;
       font-size: 16px;
+      margin-bottom: 10px;
     }
-
-    .cards {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    .card {
-      background: #fff;
-      border-radius: 14px;
-      padding: 16px;
-      box-shadow: 0 6px 14px rgba(0,0,0,0.06);
-    }
-
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-
-    .card-header h2 {
-      margin: 0;
-    }
-
-    .set-number {
-      font-size: 14px;
-      color: #0066cc;
-      cursor: pointer;
-    }
-
-    .add-btn {
+    button {
       width: 100%;
-      height: 70px;
-      font-size: 36px;
-      font-weight: bold;
-      border-radius: 12px;
+      padding: 16px;
+      font-size: 22px;
       border: none;
+      border-radius: 10px;
       background: #2563eb;
       color: white;
       cursor: pointer;
     }
-
-    .add-btn:disabled {
-      background: #a5b4fc;
-      cursor: not-allowed;
+    button:disabled {
+      background: #9ca3af;
     }
-
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 16px;
-      font-size: 14px;
+      margin-top: 10px;
     }
-
     th, td {
       padding: 8px;
-      border-bottom: 1px solid #eee;
-      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 14px;
     }
-
-    th {
-      background: #f9fafb;
-      font-weight: 600;
-    }
-
-    .note {
-      margin-top: 24px;
+    .small {
+      font-size: 12px;
+      color: #6b7280;
       text-align: center;
-      font-size: 13px;
-      color: #555;
-    }
-
-    /* Modal sederhana */
-    .modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.4);
-      display: none;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .modal-content {
-      background: #fff;
-      padding: 20px;
-      border-radius: 12px;
-      width: 90%;
-      max-width: 400px;
-    }
-
-    .modal-content h3 {
-      margin-top: 0;
-    }
-
-    .modal-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-    }
-
-    .btn {
-      padding: 10px 16px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-    }
-
-    .btn-primary {
-      background: #2563eb;
-      color: #fff;
-    }
-
-    .btn-secondary {
-      background: #e5e7eb;
     }
   </style>
 </head>
+
 <body>
 
-  <h1>NOMOR SURAT BERSAMA</h1>
+<h1>NOMOR SURAT BERSAMA</h1>
 
-  <!-- Kontrol atas -->
-  <div class="top-controls">
-    <label>Ruang Pengguna</label>
-    <select id="ruangSelect">
-      <option value="">— Pilih Ruang —</option>
-      <option value="R1">R1</option>
-      <option value="R2">R2</option>
-      <option value="R3">R3</option>
-    </select>
+<div class="card">
+  <select id="ruang">
+    <option value="">Pilih Ruang</option>
+    <option>R1</option>
+    <option>R2</option>
+    <option>R3</option>
+  </select>
 
-    <label>Bulan (Romawi)</label>
-    <input type="text" id="bulan" value="II">
+  <input id="bulan" value="II">
+  <input id="tahun" value="2026">
+</div>
 
-    <label>Tahun</label>
-    <input type="number" id="tahun" value="2026">
-  </div>
+<div class="card">
+  <h3>SKB</h3>
+  <button onclick="generateNumber('SKB')">+</button>
+  <table id="tableSKB">
+    <thead><tr><th>Nomor</th><th>Ruang</th><th>Jam</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
 
-  <!-- Kartu -->
-  <div class="cards">
+<div class="card">
+  <h3>KEUR</h3>
+  <button onclick="generateNumber('KEUR')">+</button>
+  <table id="tableKEUR">
+    <thead><tr><th>Nomor</th><th>Ruang</th><th>Jam</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
 
-    <!-- SKB -->
-    <div class="card">
-      <div class="card-header">
-        <h2>SKB</h2>
-        <span class="set-number" onclick="openModal('SKB')">Set Nomor</span>
-      </div>
+<div class="card">
+  <h3>Set Nomor Awal</h3>
+  <input id="initSKB" placeholder="Nomor terakhir SKB (misal 24)">
+  <button onclick="setInitial('SKB')">Simpan SKB</button>
+  <input id="initKEUR" placeholder="Nomor terakhir KEUR (misal 18)">
+  <button onclick="setInitial('KEUR')">Simpan KEUR</button>
+</div>
 
-      <button class="add-btn" id="btnSKB" disabled>+</button>
+<p class="small">Nomor diberikan oleh sistem · jangan refresh saat klik</p>
 
-      <table>
-        <thead>
-          <tr>
-            <th>No</th>
-            <th>Nomor Surat Lengkap</th>
-            <th>Ruang</th>
-            <th>Jam</th>
-          </tr>
-        </thead>
-        <tbody id="tableSKB">
-          <!-- data -->
-        </tbody>
-      </table>
-    </div>
+<!-- FIREBASE -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+    getFirestore, doc, getDoc, setDoc,
+    updateDoc, increment, collection,
+    addDoc, query, orderBy, limit, onSnapshot, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    <!-- KEUR -->
-    <div class="card">
-      <div class="card-header">
-        <h2>KEUR</h2>
-        <span class="set-number" onclick="openModal('KEUR')">Set Nomor</span>
-      </div>
+  const firebaseConfig = {
+    apiKey: "AIzaSyBd54K4gt0NaEfcf_E43wZVqnjM7Mi6GAA",
+    authDomain: "nomor-surat-pkm.firebaseapp.com",
+    projectId: "nomor-surat-pkm",
+    storageBucket: "nomor-surat-pkm.firebasestorage.app",
+    messagingSenderId: "825283193186",
+    appId: "1:825283193186:web:683e6df9631fca4590a43b"
+  };
 
-      <button class="add-btn" id="btnKEUR" disabled>+</button>
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-      <table>
-        <thead>
-          <tr>
-            <th>No</th>
-            <th>Nomor Surat Lengkap</th>
-            <th>Ruang</th>
-            <th>Jam</th>
-          </tr>
-        </thead>
-        <tbody id="tableKEUR">
-          <!-- data -->
-        </tbody>
-      </table>
-    </div>
-
-  </div>
-
-  <div class="note">
-    Nomor diberikan oleh sistem • Jangan refresh saat klik
-  </div>
-
-  <!-- Modal Set Nomor -->
-  <div class="modal" id="modal">
-    <div class="modal-content">
-      <h3 id="modalTitle"></h3>
-
-      <label>Nomor terakhir yang sudah digunakan</label>
-      <input type="number" id="lastNumberInput">
-
-      <p style="font-size:13px;color:#555;">
-        Nomor berikutnya akan dimulai dari <strong id="nextPreview"></strong>
-      </p>
-
-      <div class="modal-actions">
-        <button class="btn btn-secondary" onclick="closeModal()">Batal</button>
-        <button class="btn btn-primary">Simpan</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Script non-teknis (placeholder Firebase) -->
-  <script>
-    const ruangSelect = document.getElementById('ruangSelect');
-    const btnSKB = document.getElementById('btnSKB');
-    const btnKEUR = document.getElementById('btnKEUR');
-
-    ruangSelect.addEventListener('change', () => {
-      const enabled = ruangSelect.value !== '';
-      btnSKB.disabled = !enabled;
-      btnKEUR.disabled = !enabled;
-    });
-
-    function openModal(type) {
-      document.getElementById('modalTitle').innerText =
-        `Nomor Terakhir ${type}`;
-      document.getElementById('modal').style.display = 'flex';
-      document.getElementById('lastNumberInput').value = '';
-      document.getElementById('nextPreview').innerText = '—';
+  window.generateNumber = async (type) => {
+    const ruang = document.getElementById('ruang').value;
+    if (!ruang) {
+      alert('Pilih ruang terlebih dahulu');
+      return;
     }
 
-    function closeModal() {
-      document.getElementById('modal').style.display = 'none';
+    const bulan = document.getElementById('bulan').value;
+    const tahun = document.getElementById('tahun').value;
+
+    const counterRef = doc(db, 'counters', type);
+    const snap = await getDoc(counterRef);
+
+    if (!snap.exists()) {
+      alert('Nomor awal belum di-set');
+      return;
     }
 
-    document.getElementById('lastNumberInput').addEventListener('input', e => {
-      const val = parseInt(e.target.value || 0, 10) + 1;
-      document.getElementById('nextPreview').innerText =
-        String(val).padStart(5, '0');
+    await updateDoc(counterRef, { value: increment(1) });
+
+    const newSnap = await getDoc(counterRef);
+    const no = String(newSnap.data().value).padStart(5, '0');
+
+    const full = `400.7/${no}/${type}/PKM.KDG/${bulan}/${tahun}`;
+
+    await addDoc(collection(db, 'history'), {
+      type, ruang, nomor: full, time: serverTimestamp()
     });
-  </script>
+  };
+
+  window.setInitial = async (type) => {
+    const val = document.getElementById(type === 'SKB' ? 'initSKB' : 'initKEUR').value;
+    if (!val) return;
+    await setDoc(doc(db, 'counters', type), { value: Number(val) });
+    alert('Nomor awal disimpan');
+  };
+
+  ['SKB','KEUR'].forEach(type => {
+    const q = query(
+      collection(db, 'history'),
+      orderBy('time','desc'),
+      limit(5)
+    );
+    onSnapshot(q, snap => {
+      const tbody = document.querySelector(`#table${type} tbody`);
+      tbody.innerHTML = '';
+      snap.docs
+        .filter(d => d.data().type === type)
+        .forEach(d => {
+          const x = d.data();
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${x.nomor}</td><td>${x.ruang}</td><td>${x.time?.toDate().toLocaleTimeString()}</td>`;
+          tbody.appendChild(tr);
+        });
+    });
+  });
+</script>
 
 </body>
 </html>
