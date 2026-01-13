@@ -2,50 +2,21 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Nomor Surat Pasien V1.6</title>
+  <title>Nomor Surat Pasien V2.0</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- CSS sama seperti sebelumnya -->
-  <style>
-    body {
-      font-family: system-ui, sans-serif;
-      background: #f3f4f6;
-      margin: 0;
-      padding: 16px;
-    }
-    h1 { text-align: center; margin-bottom: 4px; }
-    .subtitle { text-align: center; font-size: 14px; color: #6b7280; margin-bottom: 16px; }
-    .card { background: white; border-radius: 14px; padding: 16px; margin-bottom: 16px; box-shadow: 0 8px 20px rgba(0,0,0,.06); }
-    select, input { width: 100%; padding: 12px; font-size: 16px; margin-bottom: 10px; border-radius: 10px; border: 1px solid #d1d5db; box-sizing: border-box; }
-    button { width: 100%; padding: 18px; font-size: 26px; border: none; border-radius: 12px; background: #2563eb; color: white; cursor: pointer; margin-bottom: 8px; }
-    button.small { font-size: 16px; padding: 12px; background: #4b5563; }
-    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-    th, td { padding: 8px; border-bottom: 1px solid #e5e7eb; font-size: 14px; text-align: left; }
-    td.copy { cursor: pointer; color: #2563eb; transition: background 0.2s; }
-    td.copy:hover { background: #f0f9ff; }
-    .tabs { display: flex; background: #e5e7eb; border-radius: 999px; padding: 4px; margin-bottom: 16px; }
-    .tab { flex: 1; border: none; background: transparent; padding: 12px; font-size: 15px; cursor: pointer; border-radius: 999px; color: #374151; }
-    .tab.active { background: white; font-weight: 600; box-shadow: 0 6px 14px rgba(0,0,0,.08); }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-    #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #111827; color: white; padding: 12px 20px; border-radius: 999px; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .3s ease, transform .3s ease; z-index: 1000; }
-    #toast.show { opacity: 1; transform: translateX(-50%) translateY(-6px); }
-    .empty-state { text-align: center; color: #9ca3af; padding: 20px; font-style: italic; }
-    .loading { text-align: center; padding: 20px; color: #6b7280; }
-    .refresh-btn { position: absolute; right: 16px; top: 16px; background: none; border: none; font-size: 18px; cursor: pointer; padding: 4px; border-radius: 4px; color: #6b7280; }
-    .refresh-btn:hover { background: #f3f4f6; color: #374151; }
-    .counter-badge { background: #10b981; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; margin-left: 8px; }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<div style="display:flex;align-items:center;justify-content:center;gap:8px;position:relative;">
-  <h1 style="margin:0;">Nomor Surat Pasien</h1>
-  <span onclick="toggleSettings()" style="cursor:pointer;font-size:20px;">⚙️</span>
+<div class="header-container">
+  <h1>Nomor Surat Pasien</h1>
+  <span class="settings-icon" onclick="toggleSettings()">⚙️</span>
   <button class="refresh-btn" onclick="loadAllData()" title="Refresh data">🔄</button>
 </div>
 <p class="subtitle">Sistem penomoran surat bersama lintas ruang</p>
 
+<!-- Input Ruang -->
 <div class="card">
   <select id="ruang">
     <option value="">Pilih Ruang</option>
@@ -55,418 +26,90 @@
     <option>R4</option>
     <option>R5</option>
   </select>
-  <div style="display:flex;gap:8px;margin-top:8px;">
-    <button class="small" onclick="generateNumber('SKB')" style="flex:1;background:#3b82f6;">+ SKB</button>
-    <button class="small" onclick="generateNumber('KEUR')" style="flex:1;background:#10b981;">+ KEUR</button>
+  <div class="button-group">
+    <button class="btn-small btn-skb" onclick="generateNumber('SKB')">+ SKB</button>
+    <button class="btn-small btn-keur" onclick="generateNumber('KEUR')">+ KEUR</button>
   </div>
 </div>
 
+<!-- Settings Panel -->
 <div id="settingsPanel" class="card" style="display:none;">
   <h3>Pengaturan</h3>
+  
   <h4>Nomor Awal</h4>
   <input id="initSKB" placeholder="Nomor terakhir SKB (misal 100)" type="number">
-  <button class="small" onclick="setInitial('SKB')">Simpan SKB</button>
+  <button class="btn-small" onclick="setInitial('SKB')">Simpan SKB</button>
   <br><br>
   <input id="initKEUR" placeholder="Nomor terakhir KEUR (misal 50)" type="number">
-  <button class="small" onclick="setInitial('KEUR')">Simpan KEUR</button>
-  <hr style="margin:16px 0;">
+  <button class="btn-small" onclick="setInitial('KEUR')">Simpan KEUR</button>
+  
+  <hr class="divider">
+  
   <h4>Bulan & Tahun</h4>
   <input id="bulan" placeholder="Bulan Romawi">
   <input id="tahun" placeholder="Tahun" type="number">
-  <div style="margin-top:16px;text-align:center;">
-    <button class="small" onclick="resetLocalData()">Reset Cache</button>
-    <button class="small" onclick="createFirestoreIndex()" style="background:#8b5cf6;">Buat Index</button>
+  
+  <div class="settings-buttons">
+    <button class="btn-small" onclick="resetLocalData()">Reset Cache</button>
+    <button class="btn-small btn-purple" onclick="createFirestoreIndex()">Buat Index</button>
   </div>
 </div>
 
+<!-- Tabs -->
 <div class="tabs">
-  <button class="tab active" onclick="switchTab('SKB')">SKB <span id="skbCount" class="counter-badge">0</span></button>
-  <button class="tab" onclick="switchTab('KEUR')">KEUR <span id="keurCount" class="counter-badge">0</span></button>
+  <button class="tab active" onclick="switchTab('SKB')">
+    SKB <span id="skbCount" class="counter-badge">0</span>
+  </button>
+  <button class="tab" onclick="switchTab('KEUR')">
+    KEUR <span id="keurCount" class="counter-badge">0</span>
+  </button>
 </div>
 
+<!-- SKB Tab Content -->
 <div id="SKB" class="tab-content active card">
-  <h3 style="margin-top:0;">Surat Keterangan Berperilaku (SKB)</h3>
+  <h3 class="tab-title">Surat Keterangan Berperilaku (SKB)</h3>
   <table id="tableSKB">
     <thead>
-      <tr><th>Nomor Surat</th><th>Ruang</th><th>Waktu</th></tr>
+      <tr>
+        <th>Nomor Surat</th>
+        <th>Ruang</th>
+        <th>Waktu</th>
+      </tr>
     </thead>
     <tbody>
-      <tr><td colspan="3" class="loading">Memuat data SKB...</td></tr>
+      <tr>
+        <td colspan="3" class="loading">Memuat data SKB...</td>
+      </tr>
     </tbody>
   </table>
 </div>
 
+<!-- KEUR Tab Content -->
 <div id="KEUR" class="tab-content card">
-  <h3 style="margin-top:0;">Surat Keterangan Untuk Rawat (KEUR)</h3>
+  <h3 class="tab-title">Surat Keterangan Untuk Rawat (KEUR)</h3>
   <table id="tableKEUR">
     <thead>
-      <tr><th>Nomor Surat</th><th>Ruang</th><th>Waktu</th></tr>
+      <tr>
+        <th>Nomor Surat</th>
+        <th>Ruang</th>
+        <th>Waktu</th>
+      </tr>
     </thead>
     <tbody>
-      <tr><td colspan="3" class="loading">Memuat data KEUR...</td></tr>
+      <tr>
+        <td colspan="3" class="loading">Memuat data KEUR...</td>
+      </tr>
     </tbody>
   </table>
 </div>
 
+<!-- Toast Notification -->
 <div id="toast"></div>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import {
-    getFirestore, doc, getDoc, setDoc,
-    updateDoc, increment, collection,
-    addDoc, query, orderBy, limit,
-    onSnapshot, serverTimestamp
-  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyBd54K4gt0NaEfcf_E43wZVqnjM7Mi6GAA",
-    authDomain: "nomor-surat-pkm.firebasestorage.app",
-    projectId: "nomor-surat-pkm",
-    storageBucket: "nomor-surat-pkm.firebasestorage.app",
-    messagingSenderId: "825283193186",
-    appId: "1:825283193186:web:683e6df9631fca4590a43b"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  // Variabel state
-  let unsubscribeAll = null;
-  let allData = { SKB: [], KEUR: [] };
-  let currentTab = 'SKB';
-
-  // Auto bulan & tahun
-  const bulanRomawi = ["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII"];
-  const now = new Date();
-  document.getElementById("bulan").value = bulanRomawi[now.getMonth()];
-  document.getElementById("tahun").value = now.getFullYear();
-
-  // ========== CORE FUNCTIONS ==========
-
-  window.showToast = (text, type = 'info') => {
-    const toast = document.getElementById("toast");
-    toast.textContent = text;
-    toast.style.background = type === 'error' ? '#dc2626' : 
-                            type === 'success' ? '#059669' : '#111827';
-    toast.classList.add("show");
-    setTimeout(() => toast.classList.remove("show"), 3000);
-  };
-
-  window.copyText = (text) => {
-    if (!text) {
-      showToast("Tidak ada teks untuk disalin", 'error');
-      return;
-    }
-    navigator.clipboard.writeText(text)
-      .then(() => showToast("✓ Nomor disalin", 'success'))
-      .catch(() => showToast("Gagal menyalin", 'error'));
-  };
-
-  window.switchTab = (type) => {
-    currentTab = type;
-    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
-    document.querySelector(`.tab[onclick*="${type}"]`).classList.add("active");
-    document.getElementById(type).classList.add("active");
-    renderTable(type);
-  };
-
-  // ========== DATA LOADING ==========
-
-  window.loadAllData = () => {
-    console.log("🔄 Loading all data...");
-    showToast("Memuat data...", 'info');
-    
-    // Hapus listener sebelumnya
-    if (unsubscribeAll) {
-      unsubscribeAll();
-    }
-    
-    // Query SEMUA data tanpa where() clause
-    const q = query(
-      collection(db, "history"), 
-      orderBy("time", "desc"), 
-      limit(50)
-    );
-    
-    unsubscribeAll = onSnapshot(q, 
-      (snapshot) => {
-        console.log(`📥 Received ${snapshot.docs.length} documents`);
-        
-        // Reset data
-        allData = { SKB: [], KEUR: [] };
-        
-        // Organize data by type
-        snapshot.docs.forEach(doc => {
-          const data = doc.data();
-          const type = data.type || 'UNKNOWN';
-          
-          if (type === 'SKB' || type === 'KEUR') {
-            allData[type].push({
-              id: doc.id,
-              ...data,
-              timestamp: data.time?.toDate ? data.time.toDate() : new Date()
-            });
-          }
-        });
-        
-        // Update counters
-        document.getElementById('skbCount').textContent = allData.SKB.length;
-        document.getElementById('keurCount').textContent = allData.KEUR.length;
-        
-        // Render current tab
-        renderTable(currentTab);
-        
-        // Show success message
-        if (snapshot.docs.length > 0) {
-          showToast(`✓ Data diperbarui (${snapshot.docs.length} dokumen)`, 'success');
-        }
-      },
-      (error) => {
-        console.error("❌ Error loading data:", error);
-        
-        // Fallback: try without orderBy
-        if (error.code === 'failed-precondition') {
-          console.log("⚠️  Trying without orderBy...");
-          loadWithoutOrderBy();
-        } else {
-          showToast(`Error: ${error.message}`, 'error');
-        }
-      }
-    );
-  };
-
-  window.loadWithoutOrderBy = () => {
-    const q = query(collection(db, "history"), limit(50));
-    
-    onSnapshot(q, 
-      (snapshot) => {
-        allData = { SKB: [], KEUR: [] };
-        
-        snapshot.docs.forEach(doc => {
-          const data = doc.data();
-          const type = data.type || 'UNKNOWN';
-          
-          if (type === 'SKB' || type === 'KEUR') {
-            allData[type].push({
-              id: doc.id,
-              ...data,
-              timestamp: data.time?.toDate ? data.time.toDate() : new Date()
-            });
-          }
-        });
-        
-        // Sort manually by timestamp
-        allData.SKB.sort((a, b) => b.timestamp - a.timestamp);
-        allData.KEUR.sort((a, b) => b.timestamp - a.timestamp);
-        
-        // Update counters
-        document.getElementById('skbCount').textContent = allData.SKB.length;
-        document.getElementById('keurCount').textContent = allData.KEUR.length;
-        
-        renderTable(currentTab);
-        showToast("✓ Data dimuat (tanpa sorting)", 'info');
-      },
-      (error) => {
-        console.error("Even without orderBy error:", error);
-        showToast("Gagal memuat data", 'error');
-      }
-    );
-  };
-
-  window.renderTable = (type) => {
-    const tbody = document.querySelector(`#table${type} tbody`);
-    const data = allData[type] || [];
-    
-    if (data.length === 0) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="3" class="empty-state">
-            Belum ada data ${type}.<br>
-            <small>Klik tombol "+ ${type}" untuk membuat nomor pertama</small>
-          </td>
-        </tr>
-      `;
-      return;
-    }
-    
-    let html = '';
-    data.slice(0, 15).forEach(item => { // Tampilkan max 15
-      const timeStr = item.timestamp.toLocaleTimeString('id-ID', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-      });
-      
-      const dateStr = item.timestamp.toLocaleDateString('id-ID', {
-        day: '2-digit',
-        month: 'short'
-      });
-      
-      html += `
-        <tr>
-          <td class="copy" onclick="copyText('${item.nomor}')" 
-              title="Klik untuk menyalin">
-            <div style="font-weight:500;">${item.nomor}</div>
-            <div style="font-size:12px;color:#6b7280;margin-top:2px;">
-              📋 Klik untuk menyalin
-            </div>
-          </td>
-          <td>
-            <span style="background:#f3f4f6;padding:4px 12px;border-radius:20px;font-weight:500;">
-              ${item.ruang || '-'}
-            </span>
-          </td>
-          <td>
-            <div>${timeStr}</div>
-            <div style="font-size:12px;color:#6b7280;">${dateStr}</div>
-          </td>
-        </tr>
-      `;
-    });
-    
-    tbody.innerHTML = html;
-  };
-
-  // ========== GENERATE NUMBER ==========
-
-  window.generateNumber = async (type) => {
-    const ruang = document.getElementById("ruang").value.trim();
-    if (!ruang) {
-      showToast("Pilih ruang terlebih dahulu", 'error');
-      return;
-    }
-
-    const bulan = document.getElementById("bulan").value.trim();
-    const tahun = document.getElementById("tahun").value.trim();
-    
-    if (!bulan || !tahun) {
-      showToast("Bulan dan tahun harus diisi", 'error');
-      return;
-    }
-
-    try {
-      showToast(`Membuat nomor ${type}...`, 'info');
-      
-      // 1. Get current counter
-      const counterRef = doc(db, "counters", type);
-      const counterSnap = await getDoc(counterRef);
-      
-      let nextNumber = 1;
-      if (counterSnap.exists()) {
-        nextNumber = (counterSnap.data().value || 0) + 1;
-      }
-      
-      // 2. Format nomor
-      const no = String(nextNumber).padStart(5, "0");
-      const fullNomor = `400.7/${no}/${type}/PKM.KDG/${bulan}/${tahun}`;
-      
-      // 3. Save to history first (immediate feedback)
-      await addDoc(collection(db, "history"), {
-        type, 
-        ruang, 
-        nomor: fullNomor, 
-        time: serverTimestamp(),
-        bulan,
-        tahun,
-        counter: nextNumber
-      });
-      
-      // 4. Update counter (background)
-      await setDoc(counterRef, { 
-        value: nextNumber,
-        updatedAt: serverTimestamp() 
-      }, { merge: true });
-      
-      // 5. Success
-      showToast(`✓ ${type} dibuat: ${no}`, 'success');
-      copyText(fullNomor);
-      
-    } catch (error) {
-      console.error("❌ Error generating number:", error);
-      showToast(`Gagal: ${error.message}`, 'error');
-    }
-  };
-
-  window.setInitial = async (type) => {
-    const inputId = type === "SKB" ? "initSKB" : "initKEUR";
-    const val = document.getElementById(inputId).value.trim();
-    
-    if (!val || isNaN(val)) {
-      showToast("Masukkan angka yang valid", 'error');
-      return;
-    }
-    
-    try {
-      const counterRef = doc(db, "counters", type);
-      await setDoc(counterRef, { 
-        value: Number(val),
-        updatedAt: serverTimestamp()
-      });
-      
-      showToast(`✓ ${type} awal: ${val}`, 'success');
-      document.getElementById(inputId).value = '';
-      
-    } catch (error) {
-      console.error("Error setting initial:", error);
-      showToast("Gagal menyimpan", 'error');
-    }
-  };
-
-  // ========== UTILITIES ==========
-
-  window.toggleSettings = () => {
-    const panel = document.getElementById("settingsPanel");
-    panel.style.display = panel.style.display === "none" ? "block" : "none";
-  };
-
-  window.resetLocalData = () => {
-    if (confirm("Reset cache lokal?")) {
-      localStorage.clear();
-      sessionStorage.clear();
-      showToast("Cache direset", 'info');
-      setTimeout(() => location.reload(), 1000);
-    }
-  };
-
-  window.createFirestoreIndex = () => {
-    const link = `https://console.firebase.google.com/project/${firebaseConfig.projectId}/firestore/indexes?create_composite=ClZwcm9qZWN0cy9ub21vci1zdXJhdC1wa20vZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL2hpc3RvcnkvaW5kZXhlcy9fEAEaCAoEdHlwZRACGgwKCHRpbWVzdGFtcBABGgwKCGNyZWF0ZWRBdAAB`;
-    window.open(link, '_blank');
-    showToast("Buka Firebase Console untuk buat index", 'info');
-  };
-
-  // ========== INITIALIZATION ==========
-
-  document.addEventListener('DOMContentLoaded', () => {
-    console.log("🚀 Starting application...");
-    
-    // Load data
-    loadAllData();
-    
-    // Auto-refresh every 30 seconds
-    setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        loadAllData();
-      }
-    }, 30000);
-    
-    // Handle visibility change
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') {
-        console.log("🔄 Tab aktif, refreshing...");
-        loadAllData();
-      }
-    });
-  });
-
-  // Error handling
-  window.addEventListener('error', (event) => {
-    console.error('Global error:', event.error);
-    showToast("Aplikasi error, refresh halaman", 'error');
-  });
-
-</script>
+<!-- Scripts -->
+<script type="module" src="firebase-config.js"></script>
+<script type="module" src="modules/utils.js"></script>
+<script type="module" src="app.js"></script>
 
 </body>
 </html>
