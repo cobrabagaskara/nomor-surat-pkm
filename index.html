@@ -1,136 +1,110 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>Nomor Surat Pasien</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<title>Nomor Surat Pasien</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <style>
-    body {
-      font-family: system-ui, sans-serif;
-      background: #f3f4f6;
-      margin: 0;
-      padding: 16px;
-    }
+<style>
+body {
+  font-family: system-ui, sans-serif;
+  background:#f3f4f6;
+  margin:0;
+  padding:16px;
+}
+h1 { text-align:center; margin:0; }
+.subtitle {
+  text-align:center;
+  font-size:14px;
+  color:#6b7280;
+  margin-bottom:16px;
+}
+.card {
+  background:white;
+  border-radius:14px;
+  padding:16px;
+  margin-bottom:16px;
+  box-shadow:0 8px 20px rgba(0,0,0,.06);
+}
+select,input {
+  width:100%;
+  padding:12px;
+  font-size:16px;
+  margin-bottom:10px;
+  border-radius:10px;
+  border:1px solid #d1d5db;
+}
+button {
+  width:100%;
+  padding:18px;
+  font-size:26px;
+  border:none;
+  border-radius:12px;
+  background:#2563eb;
+  color:white;
+  cursor:pointer;
+}
+.tabs {
+  display:flex;
+  background:#e5e7eb;
+  border-radius:999px;
+  padding:4px;
+  margin-bottom:16px;
+}
+.tab {
+  flex:1;
+  background:transparent;
+  border:none;
+  padding:12px;
+  font-size:15px;
+  border-radius:999px;
+  cursor:pointer;
+}
+.tab.active {
+  background:white;
+  font-weight:600;
+  box-shadow:0 6px 14px rgba(0,0,0,.08);
+}
+.tab-content { display:none; }
+.tab-content.active { display:block; }
 
-    h1 {
-      text-align: center;
-      margin-bottom: 4px;
-    }
+table {
+  width:100%;
+  border-collapse:collapse;
+  margin-top:12px;
+}
+th,td {
+  padding:8px;
+  border-bottom:1px solid #e5e7eb;
+  font-size:14px;
+}
+td.copy {
+  cursor:pointer;
+  color:#2563eb;
+}
 
-    .subtitle {
-      text-align: center;
-      font-size: 14px;
-      color: #6b7280;
-      margin-bottom: 16px;
-    }
-
-    .card {
-      background: white;
-      border-radius: 14px;
-      padding: 16px;
-      margin-bottom: 16px;
-      box-shadow: 0 8px 20px rgba(0,0,0,.06);
-    }
-
-    select, input {
-      width: 100%;
-      padding: 12px;
-      font-size: 16px;
-      margin-bottom: 10px;
-      border-radius: 10px;
-      border: 1px solid #d1d5db;
-    }
-
-    button {
-      width: 100%;
-      padding: 18px;
-      font-size: 26px;
-      border: none;
-      border-radius: 12px;
-      background: #2563eb;
-      color: white;
-      cursor: pointer;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 12px;
-    }
-
-    th, td {
-      padding: 8px;
-      border-bottom: 1px solid #e5e7eb;
-      font-size: 14px;
-      text-align: left;
-    }
-
-    td.copy {
-      cursor: pointer;
-      color: #2563eb;
-    }
-
-    .tabs {
-      display: flex;
-      background: #e5e7eb;
-      border-radius: 999px;
-      padding: 4px;
-      margin-bottom: 16px;
-    }
-
-    .tab {
-      flex: 1;
-      border: none;
-      background: transparent;
-      padding: 12px;
-      font-size: 15px;
-      cursor: pointer;
-      border-radius: 999px;
-      color: #374151;
-    }
-
-    .tab.active {
-      background: white;
-      font-weight: 600;
-      box-shadow: 0 6px 14px rgba(0,0,0,.08);
-    }
-
-    .tab-content {
-      display: none;
-    }
-
-    .tab-content.active {
-      display: block;
-    }
-
-    #toast {
-      position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #111827;
-      color: white;
-      padding: 12px 20px;
-      border-radius: 999px;
-      font-size: 14px;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity .3s ease, transform .3s ease;
-    }
-
-    #toast.show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(-6px);
-    }
-  </style>
+#toast {
+  position:fixed;
+  bottom:24px;
+  left:50%;
+  transform:translateX(-50%);
+  background:#111827;
+  color:white;
+  padding:12px 20px;
+  border-radius:999px;
+  font-size:14px;
+  opacity:0;
+  transition:.3s;
+}
+#toast.show { opacity:1; }
+</style>
 </head>
 
 <body>
 
-<div style="display:flex;align-items:center;justify-content:center;gap:8px;">
-  <h1 style="margin:0;">Nomor Surat Pasien</h1>
-  <span onclick="toggleSettings()" style="cursor:pointer;font-size:20px;">⚙️</span>
+<div style="display:flex;justify-content:center;align-items:center;gap:8px;">
+  <h1>Nomor Surat Pasien</h1>
+  <span style="cursor:pointer;font-size:20px" onclick="toggleSettings()">⚙️</span>
 </div>
 <p class="subtitle">Sistem penomoran surat bersama lintas ruang</p>
 
@@ -143,23 +117,22 @@
   </select>
 </div>
 
-<div id="settingsPanel" class="card" style="display:none;">
+<div id="settingsPanel" class="card" style="display:none">
   <h3>Pengaturan</h3>
 
   <h4>Nomor Awal</h4>
-  <input id="initSKB" placeholder="Nomor terakhir SKB (misal 24)">
+  <input id="initSKB" placeholder="Nomor terakhir SKB">
   <button onclick="setInitial('SKB')">Simpan SKB</button>
   <br><br>
-  <input id="initKEUR" placeholder="Nomor terakhir KEUR (misal 18)">
+  <input id="initKEUR" placeholder="Nomor terakhir KEUR">
   <button onclick="setInitial('KEUR')">Simpan KEUR</button>
 
-  <hr style="margin:16px 0;">
+  <hr style="margin:16px 0">
 
   <h4>Bulan & Tahun</h4>
   <input id="bulan">
   <input id="tahun">
 </div>
-
 
 <div class="tabs">
   <button class="tab active" onclick="switchTab('SKB')">SKB</button>
@@ -168,165 +141,132 @@
 
 <div id="SKB" class="tab-content active card">
   <button onclick="generateNumber('SKB')">+</button>
-  <table id="tableSKB">
+  <table>
     <thead>
       <tr><th>Nomor Surat</th><th>Ruang</th><th>Waktu</th></tr>
     </thead>
-    <tbody></tbody>
+    <tbody id="tableSKB"></tbody>
   </table>
 </div>
 
 <div id="KEUR" class="tab-content card">
   <button onclick="generateNumber('KEUR')">+</button>
-  <table id="tableKEUR">
+  <table>
     <thead>
       <tr><th>Nomor Surat</th><th>Ruang</th><th>Waktu</th></tr>
     </thead>
-    <tbody></tbody>
+    <tbody id="tableKEUR"></tbody>
   </table>
 </div>
 
 <div id="toast"></div>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import {
-    getFirestore,
-    doc,
-    getDoc,
-    setDoc,
-    updateDoc,
-    increment,
-    collection,
-    addDoc,
-    query,
-    where,
-    orderBy,
-    limit,
-    onSnapshot,
-    serverTimestamp
-  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getFirestore, doc, getDoc, setDoc,
+  collection, addDoc, query,
+  orderBy, limit, onSnapshot,
+  serverTimestamp, where
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyBd54K4gt0NaEfcf_E43wZVqnjM7Mi6GAA",
-    authDomain: "nomor-surat-pkm.firebaseapp.com",
-    projectId: "nomor-surat-pkm",
-    storageBucket: "nomor-surat-pkm.firebasestorage.app",
-    messagingSenderId: "825283193186",
-    appId: "1:825283193186:web:683e6df9631fca4590a43b"
-  };
+const firebaseConfig = {
+  apiKey: "AIzaSyBd54K4gt0NaEfcf_E43wZVqnjM7Mi6GAA",
+  authDomain: "nomor-surat-pkm.firebaseapp.com",
+  projectId: "nomor-surat-pkm",
+  storageBucket: "nomor-surat-pkm.firebasestorage.app",
+  messagingSenderId: "825283193186",
+  appId: "1:825283193186:web:683e6df9631fca4590a43b"
+};
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-  // Bulan & Tahun default
-  const bulanRomawi = ["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII"];
-  const now = new Date();
-  document.getElementById("bulan").value = bulanRomawi[now.getMonth()];
-  document.getElementById("tahun").value = now.getFullYear();
+const bulanRomawi=["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII"];
+const now=new Date();
+bulan.value=bulanRomawi[now.getMonth()];
+tahun.value=now.getFullYear();
 
-  // Toast
-  window.showToast = (text) => {
-    const toast = document.getElementById("toast");
-    toast.textContent = text;
-    toast.classList.add("show");
-    setTimeout(() => toast.classList.remove("show"), 2000);
-  };
+window.showToast=(t)=>{
+  toast.textContent=t;
+  toast.classList.add("show");
+  setTimeout(()=>toast.classList.remove("show"),2000);
+};
 
-  window.copyText = (text) => {
-    navigator.clipboard.writeText(text);
-    showToast("Nomor surat disalin");
-  };
+window.copyText=(t)=>{
+  navigator.clipboard.writeText(t);
+  showToast("Nomor disalin");
+};
 
-  window.switchTab = (type) => {
-    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
-    document.querySelector(`.tab[onclick*="${type}"]`).classList.add("active");
-    document.getElementById(type).classList.add("active");
-  };
+window.switchTab=(t)=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".tab-content").forEach(x=>x.classList.remove("active"));
+  document.querySelector(`[onclick="switchTab('${t}')"]`).classList.add("active");
+  document.getElementById(t).classList.add("active");
+};
 
-  window.setInitial = async (type) => {
-    const val = document.getElementById(type === "SKB" ? "initSKB" : "initKEUR").value;
-    if (!val) return;
-    await setDoc(doc(db, "counters", type), { value: Number(val) });
-    showToast(`Nomor awal ${type} disimpan`);
-  };
+window.toggleSettings=()=>{
+  settingsPanel.style.display=settingsPanel.style.display==="none"?"block":"none";
+};
 
-  window.generateNumber = async (type) => {
-    const ruang = document.getElementById("ruang").value;
-    if (!ruang) {
-      showToast("Pilih ruang terlebih dahulu");
-      return;
-    }
+window.setInitial=async(type)=>{
+  const val=document.getElementById(type==="SKB"?"initSKB":"initKEUR").value;
+  if(!val) return;
+  await setDoc(doc(db,"counters",type),{value:Number(val)},{merge:true});
+  showToast("Nomor awal disimpan");
+};
 
-    const bulan = document.getElementById("bulan").value;
-    const tahun = document.getElementById("tahun").value;
+window.generateNumber=async(type)=>{
+  try{
+    const ruang=ruangSelect.value;
+    if(!ruang){showToast("Pilih ruang");return;}
 
-    const ref = doc(db, "counters", type);
-    const snap = await getDoc(ref);
-    if (!snap.exists()) {
-      showToast("Nomor awal belum diset");
-      return;
-    }
+    const ref=doc(db,"counters",type);
+    const snap=await getDoc(ref);
+    const current=snap.exists()?snap.data().value||0:0;
+    const next=current+1;
 
-    await updateDoc(ref, { value: increment(1) });
-    const next = await getDoc(ref);
-    const no = String(next.data().value).padStart(5, "0");
+    await setDoc(ref,{value:next},{merge:true});
 
-    const full = `400.7/${no}/${type}/PKM.KDG/${bulan}/${tahun}`;
+    const no=String(next).padStart(5,"0");
+    const full=`400.7/${no}/${type}/PKM.KDG/${bulan.value}/${tahun.value}`;
 
-    await addDoc(collection(db, "history"), {
-      type,
-      ruang,
-      nomor: full,
-      time: serverTimestamp()
+    await addDoc(collection(db,"history"),{
+      type,ruang,nomor:full,time:serverTimestamp()
     });
 
-    showToast(`Nomor ${type} dibuat`);
-  };
-
-  function listenHistory(type) {
-    const q = query(
-      collection(db, "history"),
-      where("type", "==", type),
-      orderBy("time", "desc"),
-      limit(5)
-    );
-
-    onSnapshot(q, snap => {
-      const tbody = document.querySelector(`#table${type} tbody`);
-      tbody.innerHTML = "";
-
-      snap.forEach(docSnap => {
-        const x = docSnap.data();
-        const tr = document.createElement("tr");
-
-        tr.innerHTML = `
-          <td class="copy" onclick="copyText('${x.nomor}')">
-            ${x.nomor} 📋
-          </td>
-          <td>${x.ruang}</td>
-          <td>${x.time ? x.time.toDate().toLocaleTimeString() : "-"}</td>
-        `;
-
-        tbody.appendChild(tr);
-      });
-    });
+    showToast("Nomor dibuat");
+  }catch(e){
+    console.error(e);
+    showToast("Gagal membuat nomor");
   }
+};
 
-  listenHistory("SKB");
-  listenHistory("KEUR");
+function listen(type){
+  const q=query(
+    collection(db,"history"),
+    where("type","==",type),
+    orderBy("time","desc"),
+    limit(5)
+  );
 
-  window.toggleSettings = () => {
-    const panel = document.getElementById("settingsPanel");
-    const visible = panel.style.display === "block";
-    panel.style.display = visible ? "none" : "block";
-    showToast(visible ? "Pengaturan ditutup" : "Pengaturan dibuka");
-  };
-</script>
+  onSnapshot(q,snap=>{
+    const tb=document.getElementById("table"+type);
+    tb.innerHTML="";
+    snap.forEach(d=>{
+      const x=d.data();
+      tb.innerHTML+=`
+        <tr>
+          <td class="copy" onclick="copyText('${x.nomor}')">${x.nomor} 📋</td>
+          <td>${x.ruang}</td>
+          <td>${x.time?.toDate().toLocaleTimeString()||""}</td>
+        </tr>`;
+    });
+  });
+}
 
-
-  
+listen("SKB");
+listen("KEUR");
 </script>
 
 </body>
