@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Nomor Surat Pasien V1.2</title>
+  <title>Nomor Surat Pasien V1.3</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
@@ -40,6 +40,7 @@
       margin-bottom: 10px;
       border-radius: 10px;
       border: 1px solid #d1d5db;
+      box-sizing: border-box;
     }
 
     button {
@@ -51,6 +52,13 @@
       background: #2563eb;
       color: white;
       cursor: pointer;
+      margin-bottom: 8px;
+    }
+
+    button.small {
+      font-size: 16px;
+      padding: 12px;
+      background: #4b5563;
     }
 
     table {
@@ -69,6 +77,11 @@
     td.copy {
       cursor: pointer;
       color: #2563eb;
+      transition: background 0.2s;
+    }
+
+    td.copy:hover {
+      background: #f0f9ff;
     }
 
     .tabs {
@@ -117,20 +130,53 @@
       opacity: 0;
       pointer-events: none;
       transition: opacity .3s ease, transform .3s ease;
+      z-index: 1000;
     }
 
     #toast.show {
       opacity: 1;
       transform: translateX(-50%) translateY(-6px);
     }
+
+    .empty-state {
+      text-align: center;
+      color: #9ca3af;
+      padding: 20px;
+      font-style: italic;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #6b7280;
+    }
+
+    .refresh-btn {
+      position: absolute;
+      right: 16px;
+      top: 16px;
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      color: #6b7280;
+    }
+
+    .refresh-btn:hover {
+      background: #f3f4f6;
+      color: #374151;
+    }
   </style>
 </head>
 
 <body>
 
-<div style="display:flex;align-items:center;justify-content:center;gap:8px;">
+<div style="display:flex;align-items:center;justify-content:center;gap:8px;position:relative;">
   <h1 style="margin:0;">Nomor Surat Pasien</h1>
   <span onclick="toggleSettings()" style="cursor:pointer;font-size:20px;">⚙️</span>
+  <button class="refresh-btn" onclick="loadData()" title="Refresh data">🔄</button>
 </div>
 <p class="subtitle">Sistem penomoran surat bersama lintas ruang</p>
 
@@ -148,17 +194,21 @@
   <h3>Pengaturan</h3>
 
   <h4>Nomor Awal</h4>
-  <input id="initSKB" placeholder="Nomor terakhir SKB (misal 24)">
-  <button onclick="setInitial('SKB')">Simpan SKB</button>
+  <input id="initSKB" placeholder="Nomor terakhir SKB (misal 24)" type="number">
+  <button class="small" onclick="setInitial('SKB')">Simpan SKB</button>
   <br><br>
-  <input id="initKEUR" placeholder="Nomor terakhir KEUR (misal 18)">
-  <button onclick="setInitial('KEUR')">Simpan KEUR</button>
+  <input id="initKEUR" placeholder="Nomor terakhir KEUR (misal 18)" type="number">
+  <button class="small" onclick="setInitial('KEUR')">Simpan KEUR</button>
 
   <hr style="margin:16px 0;">
 
   <h4>Bulan & Tahun</h4>
   <input id="bulan">
-  <input id="tahun">
+  <input id="tahun" type="number">
+  
+  <div style="margin-top: 16px; text-align: center;">
+    <button class="small" onclick="resetLocalData()">Reset Cache Lokal</button>
+  </div>
 </div>
 
 
@@ -168,22 +218,26 @@
 </div>
 
 <div id="SKB" class="tab-content active card">
-  <button onclick="generateNumber('SKB')">+</button>
+  <button onclick="generateNumber('SKB')">Buat Nomor SKB +</button>
   <table id="tableSKB">
     <thead>
       <tr><th>Nomor Surat</th><th>Ruang</th><th>Waktu</th></tr>
     </thead>
-    <tbody></tbody>
+    <tbody>
+      <tr><td colspan="3" class="loading">Memuat data...</td></tr>
+    </tbody>
   </table>
 </div>
 
 <div id="KEUR" class="tab-content card">
-  <button onclick="generateNumber('KEUR')">+</button>
+  <button onclick="generateNumber('KEUR')">Buat Nomor KEUR +</button>
   <table id="tableKEUR">
     <thead>
       <tr><th>Nomor Surat</th><th>Ruang</th><th>Waktu</th></tr>
     </thead>
-    <tbody></tbody>
+    <tbody>
+      <tr><td colspan="3" class="loading">Memuat data...</td></tr>
+    </tbody>
   </table>
 </div>
 
@@ -195,7 +249,7 @@
     getFirestore, doc, getDoc, setDoc,
     updateDoc, increment, collection,
     addDoc, query, orderBy, limit,
-    onSnapshot, serverTimestamp
+    onSnapshot, serverTimestamp, where
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -216,86 +270,252 @@
   document.getElementById("bulan").value = bulanRomawi[now.getMonth()];
   document.getElementById("tahun").value = now.getFullYear();
 
-  window.showToast = (text) => {
+  // Variabel global untuk menyimpan unsubscribe functions
+  let unsubscribeSKB = null;
+  let unsubscribeKEUR = null;
+  let currentTab = 'SKB';
+
+  window.showToast = (text, type = 'info') => {
     const toast = document.getElementById("toast");
     toast.textContent = text;
+    toast.style.background = type === 'error' ? '#dc2626' : 
+                            type === 'success' ? '#059669' : '#111827';
     toast.classList.add("show");
-    setTimeout(() => toast.classList.remove("show"), 2000);
+    setTimeout(() => toast.classList.remove("show"), 3000);
   };
 
   window.copyText = (text) => {
-    navigator.clipboard.writeText(text);
-    showToast("Nomor surat disalin");
+    navigator.clipboard.writeText(text)
+      .then(() => showToast("Nomor surat disalin", 'success'))
+      .catch(() => showToast("Gagal menyalin", 'error'));
   };
 
   window.switchTab = (type) => {
+    currentTab = type;
     document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
     document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
     document.querySelector(`.tab[onclick*="${type}"]`).classList.add("active");
     document.getElementById(type).classList.add("active");
+    
+    // Load data untuk tab yang aktif
+    loadTabData(type);
+  };
+
+  window.loadTabData = async (type) => {
+    const tbody = document.querySelector(`#table${type} tbody`);
+    
+    // Tampilkan loading
+    tbody.innerHTML = '<tr><td colspan="3" class="loading">Memuat data...</td></tr>';
+    
+    try {
+      // Hapus listener sebelumnya jika ada
+      if (type === 'SKB' && unsubscribeSKB) unsubscribeSKB();
+      if (type === 'KEUR' && unsubscribeKEUR) unsubscribeKEUR();
+      
+      // Query dengan filter berdasarkan type
+      const q = query(
+        collection(db, "history"), 
+        where("type", "==", type),
+        orderBy("time", "desc"), 
+        limit(10)
+      );
+      
+      // Set up real-time listener
+      const unsubscribe = onSnapshot(q, 
+        (snapshot) => {
+          updateTable(type, snapshot);
+        },
+        (error) => {
+          console.error(`Error listening to ${type}:`, error);
+          tbody.innerHTML = `<tr><td colspan="3" style="color:#dc2626;text-align:center;">
+            Gagal memuat data. Coba refresh halaman.
+          </td></tr>`;
+          showToast(`Gagal memuat data ${type}`, 'error');
+        }
+      );
+      
+      // Simpan unsubscribe function
+      if (type === 'SKB') unsubscribeSKB = unsubscribe;
+      if (type === 'KEUR') unsubscribeKEUR = unsubscribe;
+      
+    } catch (error) {
+      console.error(`Error loading ${type}:`, error);
+      tbody.innerHTML = '<tr><td colspan="3" class="empty-state">Error memuat data</td></tr>';
+    }
+  };
+
+  window.updateTable = (type, snapshot) => {
+    const tbody = document.querySelector(`#table${type} tbody`);
+    
+    if (snapshot.empty) {
+      tbody.innerHTML = '<tr><td colspan="3" class="empty-state">Belum ada data</td></tr>';
+      return;
+    }
+    
+    let html = '';
+    snapshot.docs.forEach(doc => {
+      const x = doc.data();
+      const time = x.time?.toDate ? x.time.toDate() : new Date();
+      const timeStr = time.toLocaleTimeString('id-ID', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      
+      html += `
+        <tr>
+          <td class="copy" onclick="copyText('${x.nomor}')" title="Klik untuk menyalin">
+            ${x.nomor} 📋
+          </td>
+          <td>${x.ruang || '-'}</td>
+          <td>${timeStr}</td>
+        </tr>
+      `;
+    });
+    
+    tbody.innerHTML = html;
+    
+    // Jika tab ini sedang aktif, beri notifikasi update
+    if (currentTab === type) {
+      // Tampilkan toast kecil hanya jika ada perubahan
+      const event = new CustomEvent('dataUpdated', { detail: { type } });
+      document.dispatchEvent(event);
+    }
   };
 
   window.setInitial = async (type) => {
-    const val = document.getElementById(type === "SKB" ? "initSKB" : "initKEUR").value;
-    if (!val) return;
-    await setDoc(doc(db, "counters", type), { value: Number(val) });
-    showToast("Nomor awal disimpan");
+    const inputId = type === "SKB" ? "initSKB" : "initKEUR";
+    const val = document.getElementById(inputId).value.trim();
+    
+    if (!val || isNaN(val)) {
+      showToast("Masukkan angka yang valid", 'error');
+      return;
+    }
+    
+    try {
+      await setDoc(doc(db, "counters", type), { 
+        value: Number(val),
+        updatedAt: serverTimestamp()
+      });
+      showToast(`Nomor awal ${type} disimpan`, 'success');
+      document.getElementById(inputId).value = '';
+    } catch (error) {
+      console.error("Error saving initial:", error);
+      showToast("Gagal menyimpan nomor awal", 'error');
+    }
   };
 
   window.generateNumber = async (type) => {
-    const ruang = document.getElementById("ruang").value;
+    const ruang = document.getElementById("ruang").value.trim();
     if (!ruang) {
-      showToast("Pilih ruang terlebih dahulu");
+      showToast("Pilih ruang terlebih dahulu", 'error');
       return;
     }
 
-    const bulan = document.getElementById("bulan").value;
-    const tahun = document.getElementById("tahun").value;
-
-    const ref = doc(db, "counters", type);
-    const snap = await getDoc(ref);
-    if (!snap.exists()) {
-      showToast("Nomor awal belum diset");
+    const bulan = document.getElementById("bulan").value.trim();
+    const tahun = document.getElementById("tahun").value.trim();
+    
+    if (!bulan || !tahun) {
+      showToast("Bulan dan tahun harus diisi", 'error');
       return;
     }
 
-    await updateDoc(ref, { value: increment(1) });
-    const next = await getDoc(ref);
-    const no = String(next.data().value).padStart(5, "0");
+    try {
+      // Dapatkan counter saat ini
+      const ref = doc(db, "counters", type);
+      const snap = await getDoc(ref);
+      
+      if (!snap.exists()) {
+        showToast(`Nomor awal ${type} belum diset`, 'error');
+        return;
+      }
 
-    const full = `400.7/${no}/${type}/PKM.KDG/${bulan}/${tahun}`;
+      // Increment counter
+      const currentValue = snap.data().value || 0;
+      await updateDoc(ref, { 
+        value: increment(1),
+        updatedAt: serverTimestamp()
+      });
+      
+      // Format nomor
+      const nextValue = currentValue + 1;
+      const no = String(nextValue).padStart(5, "0");
+      const full = `400.7/${no}/${type}/PKM.KDG/${bulan}/${tahun}`;
 
-    await addDoc(collection(db, "history"), {
-      type, ruang, nomor: full, time: serverTimestamp()
-    });
+      // Simpan ke history
+      await addDoc(collection(db, "history"), {
+        type, 
+        ruang, 
+        nomor: full, 
+        counter: nextValue,
+        time: serverTimestamp(),
+        bulan,
+        tahun
+      });
 
-    showToast(`Nomor ${type} dibuat`);
+      showToast(`Nomor ${type} dibuat: ${full}`, 'success');
+      
+      // Auto copy to clipboard
+      copyText(full);
+      
+    } catch (error) {
+      console.error("Error generating number:", error);
+      showToast("Gagal membuat nomor surat", 'error');
+    }
   };
 
-  ["SKB","KEUR"].forEach(type => {
-    const q = query(collection(db, "history"), orderBy("time","desc"), limit(5));
-    onSnapshot(q, snap => {
-      const tbody = document.querySelector(`#table${type} tbody`);
-      tbody.innerHTML = "";
-      snap.docs.filter(d => d.data().type === type).forEach(d => {
-        const x = d.data();
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td class="copy" onclick="copyText('${x.nomor}')">${x.nomor} 📋</td>
-          <td>${x.ruang}</td>
-          <td>${x.time?.toDate().toLocaleTimeString()}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-    });
+  window.loadData = () => {
+    showToast("Memuat ulang data...", 'info');
+    loadTabData('SKB');
+    loadTabData('KEUR');
+    
+    // Juga reload data untuk tab yang aktif
+    if (currentTab) {
+      loadTabData(currentTab);
+    }
+  };
+
+  window.resetLocalData = () => {
+    if (confirm("Reset cache lokal? Ini tidak akan menghapus data di server.")) {
+      localStorage.clear();
+      sessionStorage.clear();
+      showToast("Cache lokal direset", 'success');
+      setTimeout(() => location.reload(), 1000);
+    }
+  };
+
+  window.toggleSettings = () => {
+    const panel = document.getElementById("settingsPanel");
+    panel.style.display = panel.style.display === "none" ? "block" : "none";
+  };
+
+  // Event listener untuk error handling
+  window.addEventListener('error', (event) => {
+    console.error('Global error:', event.error);
+    showToast("Terjadi kesalahan pada aplikasi", 'error');
   });
 
-  //pengaturan
-  window.toggleSettings = () => {
-  const panel = document.getElementById("settingsPanel");
-  panel.style.display = panel.style.display === "none" ? "block" : "none";
-};
-showToast("Pengaturan dibuka");
+  // Load data saat pertama kali
+  document.addEventListener('DOMContentLoaded', () => {
+    // Load data untuk kedua tab
+    loadTabData('SKB');
+    loadTabData('KEUR');
+    
+    // Setup visibility change listener
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        // Tab/window menjadi aktif lagi, refresh data
+        loadData();
+      }
+    });
+    
+    // Auto-refresh setiap 30 detik untuk sinkronisasi
+    setInterval(() => {
+      if (currentTab) {
+        loadTabData(currentTab);
+      }
+    }, 30000);
+  });
 
 </script>
 
