@@ -191,10 +191,20 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import {
-    getFirestore, doc, getDoc, setDoc,
-    updateDoc, increment, collection,
-    addDoc, query, orderBy, limit,
-    onSnapshot, serverTimestamp
+    getFirestore,
+    doc,
+    getDoc,
+    setDoc,
+    updateDoc,
+    increment,
+    collection,
+    addDoc,
+    query,
+    where,
+    orderBy,
+    limit,
+    onSnapshot,
+    serverTimestamp
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -209,12 +219,13 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  // Auto bulan & tahun
+  // Bulan & Tahun default
   const bulanRomawi = ["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII"];
   const now = new Date();
   document.getElementById("bulan").value = bulanRomawi[now.getMonth()];
   document.getElementById("tahun").value = now.getFullYear();
 
+  // Toast
   window.showToast = (text) => {
     const toast = document.getElementById("toast");
     toast.textContent = text;
@@ -238,7 +249,7 @@
     const val = document.getElementById(type === "SKB" ? "initSKB" : "initKEUR").value;
     if (!val) return;
     await setDoc(doc(db, "counters", type), { value: Number(val) });
-    showToast("Nomor awal disimpan");
+    showToast(`Nomor awal ${type} disimpan`);
   };
 
   window.generateNumber = async (type) => {
@@ -265,52 +276,54 @@
     const full = `400.7/${no}/${type}/PKM.KDG/${bulan}/${tahun}`;
 
     await addDoc(collection(db, "history"), {
-      type, ruang, nomor: full, time: serverTimestamp()
+      type,
+      ruang,
+      nomor: full,
+      time: serverTimestamp()
     });
 
     showToast(`Nomor ${type} dibuat`);
   };
 
- function listenHistory(type) {
-  const q = query(
-    collection(db, "history"),
-    where("type", "==", type),
-    orderBy("time", "desc"),
-    limit(5)
-  );
+  function listenHistory(type) {
+    const q = query(
+      collection(db, "history"),
+      where("type", "==", type),
+      orderBy("time", "desc"),
+      limit(5)
+    );
 
-  onSnapshot(q, snap => {
-    const tbody = document.querySelector(`#table${type} tbody`);
-    tbody.innerHTML = "";
+    onSnapshot(q, snap => {
+      const tbody = document.querySelector(`#table${type} tbody`);
+      tbody.innerHTML = "";
 
-    snap.forEach(docSnap => {
-      const x = docSnap.data();
-      const tr = document.createElement("tr");
+      snap.forEach(docSnap => {
+        const x = docSnap.data();
+        const tr = document.createElement("tr");
 
-      tr.innerHTML = `
-        <td class="copy" onclick="copyText('${x.nomor}')">
-          ${x.nomor} 📋
-        </td>
-        <td>${x.ruang}</td>
-        <td>${x.time?.toDate().toLocaleTimeString()}</td>
-      `;
+        tr.innerHTML = `
+          <td class="copy" onclick="copyText('${x.nomor}')">
+            ${x.nomor} 📋
+          </td>
+          <td>${x.ruang}</td>
+          <td>${x.time ? x.time.toDate().toLocaleTimeString() : "-"}</td>
+        `;
 
-      tbody.appendChild(tr);
+        tbody.appendChild(tr);
+      });
     });
-  });
-}
+  }
 
-// AKTIFKAN listener
-listenHistory("SKB");
-listenHistory("KEUR");
+  listenHistory("SKB");
+  listenHistory("KEUR");
 
-
-window.toggleSettings = () => {
-  const panel = document.getElementById("settingsPanel");
-  panel.style.display = panel.style.display === "none" ? "block" : "none";
-};
-
-  showToast("Pengaturan dibuka");
+  window.toggleSettings = () => {
+    const panel = document.getElementById("settingsPanel");
+    const visible = panel.style.display === "block";
+    panel.style.display = visible ? "none" : "block";
+    showToast(visible ? "Pengaturan ditutup" : "Pengaturan dibuka");
+  };
+</script>
 
 
   
