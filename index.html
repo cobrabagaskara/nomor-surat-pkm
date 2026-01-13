@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Nomor Surat Pasien V1.3</title>
+  <title>Nomor Surat Pasien V1.4</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
@@ -246,10 +246,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import {
-    getFirestore, doc, getDoc, setDoc,
-    updateDoc, increment, collection,
-    addDoc, query, orderBy, limit,
-    onSnapshot, serverTimestamp, where
+    getFirestore, collection, query, orderBy, limit, onSnapshot
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -264,108 +261,121 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  // Auto bulan & tahun
-  const bulanRomawi = ["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII"];
-  const now = new Date();
-  document.getElementById("bulan").value = bulanRomawi[now.getMonth()];
-  document.getElementById("tahun").value = now.getFullYear();
-
-  // Variabel global untuk menyimpan unsubscribe functions
-  let unsubscribeSKB = null;
-  let unsubscribeKEUR = null;
-  let currentTab = 'SKB';
-
-  window.showToast = (text, type = 'info') => {
-    const toast = document.getElementById("toast");
-    toast.textContent = text;
-    toast.style.background = type === 'error' ? '#dc2626' : 
-                            type === 'success' ? '#059669' : '#111827';
-    toast.classList.add("show");
-    setTimeout(() => toast.classList.remove("show"), 3000);
-  };
-
-  window.copyText = (text) => {
-    navigator.clipboard.writeText(text)
-      .then(() => showToast("Nomor surat disalin", 'success'))
-      .catch(() => showToast("Gagal menyalin", 'error'));
-  };
-
-  window.switchTab = (type) => {
-    currentTab = type;
-    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
-    document.querySelector(`.tab[onclick*="${type}"]`).classList.add("active");
-    document.getElementById(type).classList.add("active");
-    
-    // Load data untuk tab yang aktif
-    loadTabData(type);
-  };
-
-  window.loadTabData = async (type) => {
-    const tbody = document.querySelector(`#table${type} tbody`);
-    
-    // Tampilkan loading
-    tbody.innerHTML = '<tr><td colspan="3" class="loading">Memuat data...</td></tr>';
-    
+  // Debug function
+  window.debugFirestore = async () => {
     try {
-      // Hapus listener sebelumnya jika ada
-      if (type === 'SKB' && unsubscribeSKB) unsubscribeSKB();
-      if (type === 'KEUR' && unsubscribeKEUR) unsubscribeKEUR();
+      console.log("=== DEBUG FIREBASE CONNECTION ===");
       
-      // Query dengan filter berdasarkan type
-      const q = query(
-        collection(db, "history"), 
-        where("type", "==", type),
-        orderBy("time", "desc"), 
-        limit(10)
-      );
-      
-      // Set up real-time listener
-      const unsubscribe = onSnapshot(q, 
+      // Test 1: Coba akses collection tanpa filter
+      const testQuery = query(collection(db, "history"), limit(1));
+      const unsubscribe = onSnapshot(testQuery, 
         (snapshot) => {
-          updateTable(type, snapshot);
+          console.log("✅ Connection successful");
+          console.log("Sample data:", snapshot.docs.map(d => d.data()));
+          unsubscribe();
         },
         (error) => {
-          console.error(`Error listening to ${type}:`, error);
-          tbody.innerHTML = `<tr><td colspan="3" style="color:#dc2626;text-align:center;">
-            Gagal memuat data. Coba refresh halaman.
-          </td></tr>`;
-          showToast(`Gagal memuat data ${type}`, 'error');
+          console.error("❌ Firestore error:", error);
+          console.error("Error code:", error.code);
+          console.error("Error message:", error.message);
+          
+          if (error.code === 'failed-precondition') {
+            console.log("⚠️  You need to create an index in Firebase Console");
+            console.log("Go to: Firebase Console > Firestore > Indexes");
+          }
         }
       );
       
-      // Simpan unsubscribe function
-      if (type === 'SKB') unsubscribeSKB = unsubscribe;
-      if (type === 'KEUR') unsubscribeKEUR = unsubscribe;
-      
     } catch (error) {
-      console.error(`Error loading ${type}:`, error);
-      tbody.innerHTML = '<tr><td colspan="3" class="empty-state">Error memuat data</td></tr>';
+      console.error("❌ Setup error:", error);
     }
   };
 
-  window.updateTable = (type, snapshot) => {
+  // Load saat halaman dibuka
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log("Running debug...");
+    window.debugFirestore();
+    
+    // Coba load data dengan cara sederhana
+    loadDataSimple('SKB');
+    loadDataSimple('KEUR');
+  });
+
+  // Fungsi sederhana tanpa filter where
+  window.loadDataSimple = async (type) => {
     const tbody = document.querySelector(`#table${type} tbody`);
     
-    if (snapshot.empty) {
-      tbody.innerHTML = '<tr><td colspan="3" class="empty-state">Belum ada data</td></tr>';
+    try {
+      console.log(`Loading ${type} data...`);
+      
+      // Query sederhana tanpa where()
+      const q = query(
+        collection(db, "history"), 
+        orderBy("time", "desc"), 
+        limit(15)
+      );
+      
+      const unsubscribe = onSnapshot(q, 
+        (snapshot) => {
+          console.log(`${type} snapshot received:`, snapshot.docs.length, "docs");
+          
+          if (snapshot.empty) {
+            tbody.innerHTML = '<tr><td colspan="3" class="empty-state">Belum ada data</td></tr>';
+            return;
+          }
+          
+          // Filter di client side
+          const filteredDocs = snapshot.docs.filter(doc => {
+            const data = doc.data();
+            return data.type === type;
+          });
+          
+          updateTableSimple(type, filteredDocs);
+        },
+        (error) => {
+          console.error(`Error loading ${type}:`, error);
+          tbody.innerHTML = `<tr><td colspan="3" style="color:#dc2626;text-align:center;">
+            Error: ${error.code}<br>
+            ${error.message}
+          </td></tr>`;
+        }
+      );
+      
+    } catch (error) {
+      console.error(`Setup error for ${type}:`, error);
+      tbody.innerHTML = '<tr><td colspan="3" class="empty-state">Error setup</td></tr>';
+    }
+  };
+
+  window.updateTableSimple = (type, docs) => {
+    const tbody = document.querySelector(`#table${type} tbody`);
+    
+    if (!docs || docs.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" class="empty-state">Belum ada data ' + type + '</td></tr>';
       return;
     }
     
     let html = '';
-    snapshot.docs.forEach(doc => {
+    docs.forEach(doc => {
       const x = doc.data();
-      const time = x.time?.toDate ? x.time.toDate() : new Date();
-      const timeStr = time.toLocaleTimeString('id-ID', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-      });
+      let timeStr = 'Waktu tidak tersedia';
+      
+      try {
+        if (x.time && x.time.toDate) {
+          const time = x.time.toDate();
+          timeStr = time.toLocaleTimeString('id-ID', {
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+        }
+      } catch (e) {
+        console.warn("Time parsing error:", e);
+      }
       
       html += `
         <tr>
-          <td class="copy" onclick="copyText('${x.nomor}')" title="Klik untuk menyalin">
-            ${x.nomor} 📋
+          <td class="copy" onclick="copyText('${x.nomor || ''}')">
+            ${x.nomor || 'No number'} 📋
           </td>
           <td>${x.ruang || '-'}</td>
           <td>${timeStr}</td>
@@ -374,149 +384,20 @@
     });
     
     tbody.innerHTML = html;
-    
-    // Jika tab ini sedang aktif, beri notifikasi update
-    if (currentTab === type) {
-      // Tampilkan toast kecil hanya jika ada perubahan
-      const event = new CustomEvent('dataUpdated', { detail: { type } });
-      document.dispatchEvent(event);
-    }
   };
 
-  window.setInitial = async (type) => {
-    const inputId = type === "SKB" ? "initSKB" : "initKEUR";
-    const val = document.getElementById(inputId).value.trim();
-    
-    if (!val || isNaN(val)) {
-      showToast("Masukkan angka yang valid", 'error');
-      return;
-    }
-    
-    try {
-      await setDoc(doc(db, "counters", type), { 
-        value: Number(val),
-        updatedAt: serverTimestamp()
-      });
-      showToast(`Nomor awal ${type} disimpan`, 'success');
-      document.getElementById(inputId).value = '';
-    } catch (error) {
-      console.error("Error saving initial:", error);
-      showToast("Gagal menyimpan nomor awal", 'error');
-    }
+  // Toast function
+  window.showToast = (text) => {
+    const toast = document.getElementById("toast");
+    toast.textContent = text;
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 3000);
   };
 
-  window.generateNumber = async (type) => {
-    const ruang = document.getElementById("ruang").value.trim();
-    if (!ruang) {
-      showToast("Pilih ruang terlebih dahulu", 'error');
-      return;
-    }
-
-    const bulan = document.getElementById("bulan").value.trim();
-    const tahun = document.getElementById("tahun").value.trim();
-    
-    if (!bulan || !tahun) {
-      showToast("Bulan dan tahun harus diisi", 'error');
-      return;
-    }
-
-    try {
-      // Dapatkan counter saat ini
-      const ref = doc(db, "counters", type);
-      const snap = await getDoc(ref);
-      
-      if (!snap.exists()) {
-        showToast(`Nomor awal ${type} belum diset`, 'error');
-        return;
-      }
-
-      // Increment counter
-      const currentValue = snap.data().value || 0;
-      await updateDoc(ref, { 
-        value: increment(1),
-        updatedAt: serverTimestamp()
-      });
-      
-      // Format nomor
-      const nextValue = currentValue + 1;
-      const no = String(nextValue).padStart(5, "0");
-      const full = `400.7/${no}/${type}/PKM.KDG/${bulan}/${tahun}`;
-
-      // Simpan ke history
-      await addDoc(collection(db, "history"), {
-        type, 
-        ruang, 
-        nomor: full, 
-        counter: nextValue,
-        time: serverTimestamp(),
-        bulan,
-        tahun
-      });
-
-      showToast(`Nomor ${type} dibuat: ${full}`, 'success');
-      
-      // Auto copy to clipboard
-      copyText(full);
-      
-    } catch (error) {
-      console.error("Error generating number:", error);
-      showToast("Gagal membuat nomor surat", 'error');
-    }
+  window.copyText = (text) => {
+    navigator.clipboard.writeText(text);
+    showToast("Nomor disalin");
   };
-
-  window.loadData = () => {
-    showToast("Memuat ulang data...", 'info');
-    loadTabData('SKB');
-    loadTabData('KEUR');
-    
-    // Juga reload data untuk tab yang aktif
-    if (currentTab) {
-      loadTabData(currentTab);
-    }
-  };
-
-  window.resetLocalData = () => {
-    if (confirm("Reset cache lokal? Ini tidak akan menghapus data di server.")) {
-      localStorage.clear();
-      sessionStorage.clear();
-      showToast("Cache lokal direset", 'success');
-      setTimeout(() => location.reload(), 1000);
-    }
-  };
-
-  window.toggleSettings = () => {
-    const panel = document.getElementById("settingsPanel");
-    panel.style.display = panel.style.display === "none" ? "block" : "none";
-  };
-
-  // Event listener untuk error handling
-  window.addEventListener('error', (event) => {
-    console.error('Global error:', event.error);
-    showToast("Terjadi kesalahan pada aplikasi", 'error');
-  });
-
-  // Load data saat pertama kali
-  document.addEventListener('DOMContentLoaded', () => {
-    // Load data untuk kedua tab
-    loadTabData('SKB');
-    loadTabData('KEUR');
-    
-    // Setup visibility change listener
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) {
-        // Tab/window menjadi aktif lagi, refresh data
-        loadData();
-      }
-    });
-    
-    // Auto-refresh setiap 30 detik untuk sinkronisasi
-    setInterval(() => {
-      if (currentTab) {
-        loadTabData(currentTab);
-      }
-    }, 30000);
-  });
-
 </script>
 
 </body>
