@@ -128,7 +128,10 @@
 
 <body>
 
-<h1>Nomor Surat Pasien</h1>
+<div style="display:flex;align-items:center;justify-content:center;gap:8px;">
+  <h1 style="margin:0;">Nomor Surat Pasien</h1>
+  <span onclick="toggleSettings()" style="cursor:pointer;font-size:20px;">⚙️</span>
+</div>
 <p class="subtitle">Sistem penomoran surat bersama lintas ruang</p>
 
 <div class="card">
@@ -140,20 +143,23 @@
   </select>
 </div>
 
-<div class="card">
-  <h3>Set Nomor Awal</h3>
+<div id="settingsPanel" class="card" style="display:none;">
+  <h3>Pengaturan</h3>
+
+  <h4>Nomor Awal</h4>
   <input id="initSKB" placeholder="Nomor terakhir SKB (misal 24)">
   <button onclick="setInitial('SKB')">Simpan SKB</button>
   <br><br>
   <input id="initKEUR" placeholder="Nomor terakhir KEUR (misal 18)">
   <button onclick="setInitial('KEUR')">Simpan KEUR</button>
-</div>
 
-<div class="card">
-  <h3>Bulan & Tahun</h3>
+  <hr style="margin:16px 0;">
+
+  <h4>Bulan & Tahun</h4>
   <input id="bulan">
   <input id="tahun">
 </div>
+
 
 <div class="tabs">
   <button class="tab active" onclick="switchTab('SKB')">SKB</button>
