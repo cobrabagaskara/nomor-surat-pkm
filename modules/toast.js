@@ -1,4 +1,4 @@
-// Toast system module dengan icon
+// Toast system module
 export function showToast(text, type = 'info') {
   const toast = document.getElementById("toast");
   if (!toast) return;
@@ -32,13 +32,13 @@ export function showToast(text, type = 'info') {
   // Tampilkan toast
   toast.classList.add("show");
   
-  // Auto hide setelah 2.5 detik (kecuali untuk error)
+  // Auto hide
   const duration = type === 'error' ? 4000 : 2500;
   setTimeout(() => {
     toast.classList.remove("show");
   }, duration);
   
-  // Tambahkan class untuk animasi pulse untuk notifikasi penting
+  // Animasi pulse untuk success
   if (type === 'success') {
     toast.classList.add("important");
     setTimeout(() => {
