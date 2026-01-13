@@ -1,16 +1,14 @@
 // Utility functions
-import { showToast } from '../app.js';
 
 // Format tanggal dan waktu
 export function formatTime(timestamp) {
-  if (!timestamp) return "Waktu tidak tersedia";
+  if (!timestamp) return { timeStr: "Waktu tidak tersedia", dateStr: "" };
   
   try {
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     
-    // Cek jika tanggal valid
     if (isNaN(date.getTime())) {
-      return "Waktu tidak valid";
+      return { timeStr: "Waktu tidak valid", dateStr: "" };
     }
     
     const timeStr = date.toLocaleTimeString('id-ID', {
@@ -62,19 +60,19 @@ export function getCurrentBulanTahun() {
 }
 
 // Copy to clipboard dengan feedback
-export async function copyToClipboard(text) {
+export async function copyToClipboard(text, showToastFunc) {
   if (!text) {
-    showToast("Tidak ada teks untuk disalin", 'error');
+    if (showToastFunc) showToastFunc("Tidak ada teks untuk disalin", 'error');
     return false;
   }
   
   try {
     await navigator.clipboard.writeText(text);
-    showToast("✓ Nomor disalin", 'success');
+    if (showToastFunc) showToastFunc("✓ Nomor disalin", 'success');
     return true;
   } catch (error) {
     console.error("Copy failed:", error);
-    showToast("Gagal menyalin", 'error');
+    if (showToastFunc) showToastFunc("Gagal menyalin", 'error');
     return false;
   }
 }
