@@ -271,23 +271,39 @@
     showToast(`Nomor ${type} dibuat`);
   };
 
-  ["SKB","KEUR"].forEach(type => {
-    const q = query(collection(db, "history"), orderBy("time","desc"), limit(5));
-    onSnapshot(q, snap => {
-      const tbody = document.querySelector(`#table${type} tbody`);
-      tbody.innerHTML = "";
-      snap.docs.filter(d => d.data().type === type).forEach(d => {
-        const x = d.data();
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td class="copy" onclick="copyText('${x.nomor}')">${x.nomor} 📋</td>
-          <td>${x.ruang}</td>
-          <td>${x.time?.toDate().toLocaleTimeString()}</td>
-        `;
-        tbody.appendChild(tr);
-      });
+ function listenHistory(type) {
+  const q = query(
+    collection(db, "history"),
+    where("type", "==", type),
+    orderBy("time", "desc"),
+    limit(5)
+  );
+
+  onSnapshot(q, snap => {
+    const tbody = document.querySelector(`#table${type} tbody`);
+    tbody.innerHTML = "";
+
+    snap.forEach(docSnap => {
+      const x = docSnap.data();
+      const tr = document.createElement("tr");
+
+      tr.innerHTML = `
+        <td class="copy" onclick="copyText('${x.nomor}')">
+          ${x.nomor} 📋
+        </td>
+        <td>${x.ruang}</td>
+        <td>${x.time?.toDate().toLocaleTimeString()}</td>
+      `;
+
+      tbody.appendChild(tr);
     });
   });
+}
+
+// AKTIFKAN listener
+listenHistory("SKB");
+listenHistory("KEUR");
+
 
 window.toggleSettings = () => {
   const panel = document.getElementById("settingsPanel");
