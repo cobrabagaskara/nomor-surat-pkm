@@ -125,6 +125,14 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
+   // === AUTO BULAN & TAHUN ===
+  const bulanRomawi = ["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII"];
+  const now = new Date();
+
+  document.getElementById("bulan").value = bulanRomawi[now.getMonth()];
+  document.getElementById("tahun").value = now.getFullYear();
+  
+
   window.generateNumber = async (type) => {
     const ruang = document.getElementById('ruang').value;
     if (!ruang) {
@@ -181,6 +189,14 @@
         });
     });
   });
+
+
+  window.copyText = (text) => {
+  navigator.clipboard.writeText(text)
+    .then(() => alert("Nomor surat disalin"))
+    .catch(() => alert("Gagal menyalin"));
+};
+
 </script>
 
 </body>
