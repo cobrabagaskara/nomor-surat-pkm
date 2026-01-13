@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Nomor Surat Bersama</title>
+  <title>Nomor Surat Pasien</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
@@ -12,57 +12,124 @@
       margin: 0;
       padding: 16px;
     }
+
     h1 {
       text-align: center;
-      margin-bottom: 12px;
+      margin-bottom: 4px;
     }
+
+    .subtitle {
+      text-align: center;
+      font-size: 14px;
+      color: #6b7280;
+      margin-bottom: 16px;
+    }
+
     .card {
       background: white;
-      border-radius: 12px;
+      border-radius: 14px;
       padding: 16px;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
       box-shadow: 0 8px 20px rgba(0,0,0,.06);
     }
+
     select, input {
       width: 100%;
-      padding: 10px;
+      padding: 12px;
       font-size: 16px;
       margin-bottom: 10px;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
     }
+
     button {
       width: 100%;
-      padding: 16px;
-      font-size: 22px;
+      padding: 18px;
+      font-size: 26px;
       border: none;
-      border-radius: 10px;
+      border-radius: 12px;
       background: #2563eb;
       color: white;
       cursor: pointer;
     }
-    button:disabled {
-      background: #9ca3af;
-    }
+
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
+      margin-top: 12px;
     }
+
     th, td {
       padding: 8px;
       border-bottom: 1px solid #e5e7eb;
       font-size: 14px;
+      text-align: left;
     }
-    .small {
-      font-size: 12px;
-      color: #6b7280;
-      text-align: center;
+
+    td.copy {
+      cursor: pointer;
+      color: #2563eb;
+    }
+
+    .tabs {
+      display: flex;
+      background: #e5e7eb;
+      border-radius: 999px;
+      padding: 4px;
+      margin-bottom: 16px;
+    }
+
+    .tab {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 12px;
+      font-size: 15px;
+      cursor: pointer;
+      border-radius: 999px;
+      color: #374151;
+    }
+
+    .tab.active {
+      background: white;
+      font-weight: 600;
+      box-shadow: 0 6px 14px rgba(0,0,0,.08);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #111827;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 999px;
+      font-size: 14px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .3s ease, transform .3s ease;
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-6px);
     }
   </style>
 </head>
 
 <body>
 
-<h1>NOMOR SURAT BERSAMA</h1>
+<h1>Nomor Surat Pasien</h1>
+<p class="subtitle">Sistem penomoran surat bersama lintas ruang</p>
 
 <div class="card">
   <select id="ruang">
@@ -71,46 +138,57 @@
     <option>R2</option>
     <option>R3</option>
   </select>
-
-  <input id="bulan" value="II">
-  <input id="tahun" value="2026">
-</div>
-
-<div class="card">
-  <h3>SKB</h3>
-  <button onclick="generateNumber('SKB')">+</button>
-  <table id="tableSKB">
-    <thead><tr><th>Nomor</th><th>Ruang</th><th>Jam</th></tr></thead>
-    <tbody></tbody>
-  </table>
-</div>
-
-<div class="card">
-  <h3>KEUR</h3>
-  <button onclick="generateNumber('KEUR')">+</button>
-  <table id="tableKEUR">
-    <thead><tr><th>Nomor</th><th>Ruang</th><th>Jam</th></tr></thead>
-    <tbody></tbody>
-  </table>
 </div>
 
 <div class="card">
   <h3>Set Nomor Awal</h3>
   <input id="initSKB" placeholder="Nomor terakhir SKB (misal 24)">
   <button onclick="setInitial('SKB')">Simpan SKB</button>
+  <br><br>
   <input id="initKEUR" placeholder="Nomor terakhir KEUR (misal 18)">
   <button onclick="setInitial('KEUR')">Simpan KEUR</button>
 </div>
 
-<p class="small">Nomor diberikan oleh sistem · jangan refresh saat klik</p>
+<div class="card">
+  <h3>Bulan & Tahun</h3>
+  <input id="bulan">
+  <input id="tahun">
+</div>
 
-<!-- FIREBASE -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('SKB')">SKB</button>
+  <button class="tab" onclick="switchTab('KEUR')">KEUR</button>
+</div>
+
+<div id="SKB" class="tab-content active card">
+  <button onclick="generateNumber('SKB')">+</button>
+  <table id="tableSKB">
+    <thead>
+      <tr><th>Nomor Surat</th><th>Ruang</th><th>Waktu</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div id="KEUR" class="tab-content card">
+  <button onclick="generateNumber('KEUR')">+</button>
+  <table id="tableKEUR">
+    <thead>
+      <tr><th>Nomor Surat</th><th>Ruang</th><th>Waktu</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div id="toast"></div>
+
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import {
     getFirestore, doc, getDoc, setDoc,
     updateDoc, increment, collection,
-    addDoc, query, orderBy, limit, onSnapshot, serverTimestamp
+    addDoc, query, orderBy, limit,
+    onSnapshot, serverTimestamp
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -125,86 +203,85 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-   // === AUTO BULAN & TAHUN ===
+  // Auto bulan & tahun
   const bulanRomawi = ["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII"];
   const now = new Date();
-
   document.getElementById("bulan").value = bulanRomawi[now.getMonth()];
   document.getElementById("tahun").value = now.getFullYear();
-  
 
-  window.generateNumber = async (type) => {
-    const ruang = document.getElementById('ruang').value;
-    if (!ruang) {
-      alert('Pilih ruang terlebih dahulu');
-      return;
-    }
+  window.showToast = (text) => {
+    const toast = document.getElementById("toast");
+    toast.textContent = text;
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 2000);
+  };
 
-    const bulan = document.getElementById('bulan').value;
-    const tahun = document.getElementById('tahun').value;
+  window.copyText = (text) => {
+    navigator.clipboard.writeText(text);
+    showToast("Nomor surat disalin");
+  };
 
-    const counterRef = doc(db, 'counters', type);
-    const snap = await getDoc(counterRef);
-
-    if (!snap.exists()) {
-      alert('Nomor awal belum di-set');
-      return;
-    }
-
-    await updateDoc(counterRef, { value: increment(1) });
-
-    const newSnap = await getDoc(counterRef);
-    const no = String(newSnap.data().value).padStart(5, '0');
-
-    const full = `400.7/${no}/${type}/PKM.KDG/${bulan}/${tahun}`;
-
-    await addDoc(collection(db, 'history'), {
-      type, ruang, nomor: full, time: serverTimestamp()
-    });
+  window.switchTab = (type) => {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+    document.querySelector(`.tab[onclick*="${type}"]`).classList.add("active");
+    document.getElementById(type).classList.add("active");
   };
 
   window.setInitial = async (type) => {
-    const val = document.getElementById(type === 'SKB' ? 'initSKB' : 'initKEUR').value;
+    const val = document.getElementById(type === "SKB" ? "initSKB" : "initKEUR").value;
     if (!val) return;
-    await setDoc(doc(db, 'counters', type), { value: Number(val) });
-    alert('Nomor awal disimpan');
+    await setDoc(doc(db, "counters", type), { value: Number(val) });
+    showToast("Nomor awal disimpan");
   };
 
-  ['SKB','KEUR'].forEach(type => {
-    const q = query(
-      collection(db, 'history'),
-      orderBy('time','desc'),
-      limit(5)
-    );
+  window.generateNumber = async (type) => {
+    const ruang = document.getElementById("ruang").value;
+    if (!ruang) {
+      showToast("Pilih ruang terlebih dahulu");
+      return;
+    }
+
+    const bulan = document.getElementById("bulan").value;
+    const tahun = document.getElementById("tahun").value;
+
+    const ref = doc(db, "counters", type);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) {
+      showToast("Nomor awal belum diset");
+      return;
+    }
+
+    await updateDoc(ref, { value: increment(1) });
+    const next = await getDoc(ref);
+    const no = String(next.data().value).padStart(5, "0");
+
+    const full = `400.7/${no}/${type}/PKM.KDG/${bulan}/${tahun}`;
+
+    await addDoc(collection(db, "history"), {
+      type, ruang, nomor: full, time: serverTimestamp()
+    });
+
+    showToast(`Nomor ${type} dibuat`);
+  };
+
+  ["SKB","KEUR"].forEach(type => {
+    const q = query(collection(db, "history"), orderBy("time","desc"), limit(5));
     onSnapshot(q, snap => {
       const tbody = document.querySelector(`#table${type} tbody`);
-      tbody.innerHTML = '';
-      snap.docs
-        .filter(d => d.data().type === type)
-        .forEach(d => {
-          const x = d.data();
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-  <td onclick="copyText('${x.nomor}')" style="cursor:pointer">
-    ${x.nomor}
-    <span style="font-size:12px;color:#2563eb;">📋</span>
-  </td>
-  <td>${x.ruang}</td>
-  <td>${x.time?.toDate().toLocaleTimeString()}</td>
-`;
-
-          tbody.appendChild(tr);
-        });
+      tbody.innerHTML = "";
+      snap.docs.filter(d => d.data().type === type).forEach(d => {
+        const x = d.data();
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="copy" onclick="copyText('${x.nomor}')">${x.nomor} 📋</td>
+          <td>${x.ruang}</td>
+          <td>${x.time?.toDate().toLocaleTimeString()}</td>
+        `;
+        tbody.appendChild(tr);
+      });
     });
   });
-
-
-  window.copyText = (text) => {
-  navigator.clipboard.writeText(text)
-    .then(() => alert("Nomor surat disalin"))
-    .catch(() => alert("Gagal menyalin"));
-};
-
 </script>
 
 </body>
